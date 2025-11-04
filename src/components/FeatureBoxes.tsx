@@ -1,7 +1,7 @@
 export function FeatureBoxes() {
   const features = [
     {
-      title: 'Did You Know?',
+      title: 'Did You Know ?',
       buttonText: 'View'
     },
     {
