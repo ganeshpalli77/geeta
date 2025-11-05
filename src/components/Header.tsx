@@ -46,22 +46,20 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
   
   // Only use context if in portal mode
   const appContext = isPortalMode ? useApp() : null;
-  const { logout, changeLanguage, language, currentProfile, isAdmin, quizInProgress } = appContext || {};
+  const { logout, changeLanguage, language, currentProfile, isAdmin, quizInProgress, isAuthenticated } = appContext || {};
   const t = isPortalMode && language ? useTranslation(language) : null;
 
   // Portal navigation items
+  // Disable dashboard, quiz, events, leaderboard for logged-in users
   const navItems = isPortalMode && isAdmin
     ? [
         { id: 'admin', label: t?.('admin') || 'Admin', icon: Shield },
         { id: 'home', label: t?.('home') || 'Home', icon: Home },
       ]
-    : isPortalMode
+    : isPortalMode && isAuthenticated
     ? [
+        // Only show Home for logged-in users - dashboard, quiz, events, leaderboard are disabled
         { id: 'home', label: t?.('home') || 'Home', icon: Home },
-        { id: 'dashboard', label: t?.('dashboard') || 'Dashboard', icon: LayoutDashboard },
-        { id: 'quiz', label: t?.('quiz') || 'Quiz', icon: BookOpen },
-        { id: 'events', label: t?.('events') || 'Events', icon: Sparkles },
-        { id: 'leaderboard', label: t?.('leaderboard') || 'Leaderboard', icon: Trophy },
       ]
     : [];
 

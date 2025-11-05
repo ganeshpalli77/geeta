@@ -1,3 +1,4 @@
+import React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   authAPI, 
@@ -16,6 +17,8 @@ import {
   type LeaderboardEntry as ApiLeaderboardEntry,
 } from '../utils/apiProxy';
 import { initializeMockData } from '../utils/initMockData';
+import { supabase } from '../utils/supabaseClient';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Types (keeping backward compatibility with existing components)
 export interface UserProfile {
@@ -191,109 +194,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   });
 
-  // Save to sessionStorage whenever state changes
-  useEffect(() => {
-    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
-  }, [state]);
-
-  const login = async (email: string, otp: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.verifyOTP(email, otp, 'email');
-      
-      if (result.success) {
-        // Get user's profiles
-        const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        const user = convertApiUserToUser(result.user, profiles);
-
-        setState(prev => ({
-          ...prev,
-          user,
-          isAuthenticated: true,
-          isAdmin: false,
-        }));
-
-        // If user has profiles, load the first one
-        if (profiles.length > 0) {
-          await loadProfileData(profiles[0]._id);
-        }
-
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // Only log unexpected errors (not validation errors)
-      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
-        console.error('Login error:', error);
-      }
-      return false;
-    }
-  };
-
-  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.verifyOTP(phone, otp, 'phone');
-      
-      if (result.success) {
-        const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        const user = convertApiUserToUser(result.user, profiles);
-
-        setState(prev => ({
-          ...prev,
-          user,
-          isAuthenticated: true,
-          isAdmin: false,
-        }));
-
-        if (profiles.length > 0) {
-          await loadProfileData(profiles[0]._id);
-        }
-
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // Only log unexpected errors (not validation errors)
-      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
-        console.error('Login error:', error);
-      }
-      return false;
-    }
-  };
-
-  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.adminLogin(username, password);
-      
-      if (result.success) {
-        setState(prev => ({
-          ...prev,
-          isAuthenticated: true,
-          isAdmin: true,
-        }));
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Admin login error:', error);
-      return false;
-    }
-  };
-
-  const logout = () => {
-    setState(prev => ({
-      ...prev,
-      user: null,
-      currentProfile: null,
-      isAuthenticated: false,
-      isAdmin: false,
-      quizAttempts: [],
-      videoSubmissions: [],
-      sloganSubmissions: [],
-      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
-    }));
-    sessionStorage.removeItem('geetaOlympiadSession');
-  };
-
   const loadProfileData = async (profileId: string) => {
     try {
       const [profile, quizAttempts, videos, slogans, parts] = await Promise.all([
@@ -329,10 +229,209 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Check Supabase auth state on mount and on auth changes
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        handleSupabaseAuth(session.user, session);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        handleSupabaseAuth(session.user, session);
+      } else {
+        // User signed out
+        setState(prev => ({
+          ...prev,
+          user: null,
+          currentProfile: null,
+          isAuthenticated: false,
+          isAdmin: false,
+        }));
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSupabaseAuth = async (supabaseUser: SupabaseUser, session: Session) => {
+    try {
+      // Get user email or phone
+      const email = supabaseUser.email;
+      const phone = supabaseUser.phone;
+
+      // Create or get user from API
+      // Use Supabase user ID as the primary identifier
+      let apiUser: ApiUser;
+      try {
+        // Try to get existing user by Supabase ID
+        apiUser = await userAPI.getUser(supabaseUser.id);
+      } catch {
+        // User doesn't exist in our system yet
+        // Create a minimal user object from Supabase data
+        // The user will be created in the database when they first create a profile
+        apiUser = {
+          _id: supabaseUser.id,
+          email: email || undefined,
+          phone: phone || undefined,
+          profiles: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      // Get user's profiles (if any)
+      let profiles: ApiProfile[] = [];
+      try {
+        profiles = await profileAPI.getProfilesByUser(apiUser._id);
+      } catch {
+        // No profiles yet, that's fine
+        profiles = [];
+      }
+
+      const user = convertApiUserToUser(apiUser, profiles);
+
+      setState(prev => ({
+        ...prev,
+        user,
+        isAuthenticated: true,
+        isAdmin: false, // You can add admin check logic here if needed
+      }));
+
+      // If user has profiles, load the first one
+      if (profiles.length > 0) {
+        await loadProfileData(profiles[0]._id);
+      }
+    } catch (error) {
+      console.error('Error handling Supabase auth:', error);
+      // Set authenticated state even if profile loading fails
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+      }));
+    }
+  };
+
+  // Save to sessionStorage whenever state changes
+  useEffect(() => {
+    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
+  }, [state]);
+
+  const login = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      // Verify OTP with Supabase
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'email',
+      });
+
+      if (error) {
+        console.error('Supabase OTP verification error:', error);
+        return false;
+      }
+
+      if (data.user && data.session) {
+        // Auth state change will be handled by onAuthStateChange listener
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
+    try {
+      // Verify OTP with Supabase
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (error) {
+        console.error('Supabase OTP verification error:', error);
+        return false;
+      }
+
+      if (data.user && data.session) {
+        // Auth state change will be handled by onAuthStateChange listener
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.adminLogin(username, password);
+      
+      if (result.success) {
+        setState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          isAdmin: true,
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    setState(prev => ({
+      ...prev,
+      user: null,
+      currentProfile: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      quizAttempts: [],
+      videoSubmissions: [],
+      sloganSubmissions: [],
+      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
+    }));
+    sessionStorage.removeItem('geetaOlympiadSession');
+  };
+
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
     if (!state.user) return;
 
     try {
+      // Ensure user exists in the API system
+      // If user was created from Supabase, we need to ensure they exist in our API
+      try {
+        await userAPI.getUser(state.user.id);
+      } catch {
+        // User doesn't exist in API, create them
+        const { email, phone } = state.user;
+        await userAPI.updateUser(state.user.id, {
+          email: email || undefined,
+          phone: phone || undefined,
+          profiles: [],
+        });
+      }
+
       const newProfile = await profileAPI.createProfile({
         userId: state.user.id,
         name: profileData.name,

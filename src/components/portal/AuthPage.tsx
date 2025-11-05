@@ -8,6 +8,7 @@ import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner@2.0.3';
 import { Mail, Phone, KeyRound } from 'lucide-react';
+import { supabase } from '../../utils/supabaseClient';
 
 interface AuthPageProps {
   mode?: 'login' | 'register';
@@ -36,10 +37,49 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
       toast.error('Please enter your phone number');
       return;
     }
+
+    setLoading(true);
     
-    // Mock OTP send
-    toast.success(`OTP sent! Use 1234 for demo`);
-    setStep('otp');
+    try {
+      if (loginMethod === 'email') {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+          },
+        });
+
+        if (error) {
+          toast.error(error.message || 'Failed to send OTP');
+          setLoading(false);
+          return;
+        }
+
+        toast.success('OTP sent to your email!');
+        setStep('otp');
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone,
+          options: {
+            shouldCreateUser: true,
+          },
+        });
+
+        if (error) {
+          toast.error(error.message || 'Failed to send OTP');
+          setLoading(false);
+          return;
+        }
+
+        toast.success('OTP sent to your phone!');
+        setStep('otp');
+      }
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      toast.error('Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -99,8 +139,16 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
           <TabsTrigger value="admin">Admin Login</TabsTrigger>
         </TabsList>
 
-          <TabsContent value="user" className="space-y-4">
-            <div className="flex gap-2 mb-4">
+        <TabsContent value="user" className="space-y-4">
+          {/* Note about SMS requiring Twilio setup */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Email OTP is free and works immediately (email confirmation is disabled). 
+              SMS/Phone OTP requires Twilio setup (paid service).
+            </p>
+          </div>
+          
+          <div className="flex gap-2 mb-4">
               <Button
                 variant={loginMethod === 'phone' ? 'default' : 'outline'}
                 onClick={() => {
@@ -157,10 +205,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                 
                 <Button
                   onClick={handleSendOTP}
+                  disabled={loading}
                   className="w-full rounded-[25px]"
                   style={{ backgroundColor: '#D55328' }}
                 >
-                  {t('sendOTP')}
+                  {loading ? t('loading') : t('sendOTP')}
                 </Button>
               </div>
             )}
@@ -178,7 +227,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                     maxLength={6}
                     onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
                   />
-                  <p className="text-sm text-gray-500">Demo OTP: 1234</p>
                 </div>
                 
                 <Button
