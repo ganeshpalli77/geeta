@@ -115,7 +115,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
       if (success) {
         toast.success('Admin login successful!');
       } else {
-        toast.error('Invalid credentials. Try username: admin, password: admin123');
+        toast.error('Invalid credentials. Please try again.');
       }
     } catch (error) {
       toast.error('Login failed. Please try again.');
@@ -141,13 +141,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
 
         <TabsContent value="user" className="space-y-4">
           {/* Note about SMS requiring Twilio setup */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Email OTP is free and works immediately (email confirmation is disabled). 
-              SMS/Phone OTP requires Twilio setup (paid service).
-            </p>
-          </div>
-          
           <div className="flex gap-2 mb-4">
               <Button
                 variant={loginMethod === 'phone' ? 'default' : 'outline'}
@@ -221,7 +214,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                   <Input
                     id="otp"
                     type="text"
-                    placeholder="1234"
+                    placeholder="3443"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
@@ -272,7 +265,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
                 />
-                <p className="text-sm text-gray-500">Demo: admin / admin123</p>
               </div>
               
               <Button
