@@ -214,10 +214,10 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                   <Input
                     id="otp"
                     type="text"
-                    placeholder="3443"
+                    placeholder=""
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
+                    maxLength={10}
                     onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
                   />
                 </div>
