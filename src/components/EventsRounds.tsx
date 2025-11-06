@@ -18,7 +18,7 @@ export function EventsRounds() {
     {
       title: 'ज्ञान प्रवीण',
       subtitle: 'A challenging step up that explores deeper concepts and teachings from the Geeta.',
-      accentColor: '#D55328',
+      accentColor: '#B54520',
       image: secondRoundImage
     },
     {

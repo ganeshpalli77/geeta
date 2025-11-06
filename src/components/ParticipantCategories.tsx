@@ -45,8 +45,8 @@ export function ParticipantCategories() {
                     alt={category.title}
                     className="w-20 h-20 md:w-24 md:h-24 object-contain"
                   />
-                  <h3 className="text-lg md:text-xl text-[#193C77]">{category.title}</h3>
-                  <p className="text-sm md:text-base text-[#822A12]">{category.age}</p>
+                  <h3 className="text-lg md:text-xl text-[#193C77] font-bold">{category.title}</h3>
+                  <p className="text-sm md:text-base text-[#822A12] font-bold">{category.age}</p>
                 </div>
                 {index < categories.length - 1 && (
                   <div className="hidden sm:block w-px bg-gray-300 my-8" />

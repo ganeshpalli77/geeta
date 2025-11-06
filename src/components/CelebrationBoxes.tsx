@@ -7,7 +7,7 @@ export function CelebrationBoxes() {
     {
       title: 'Celebrate',
       subtitle: 'A celebration of learning & spiritual growth',
-      bgColor: '#D55328',
+      bgColor: '#B54520',
       image: celebrateImage
     },
     {
@@ -40,8 +40,8 @@ export function CelebrationBoxes() {
                 className="w-16 h-16 md:w-20 md:h-20"
               />
             )}
-            <h3 className="text-white text-xl md:text-2xl">{box.title}</h3>
-            <p className="text-white/90 text-sm md:text-base">{box.subtitle}</p>
+            <h3 className="text-white text-xl md:text-2xl font-bold">{box.title}</h3>
+            <p className="text-white/90 text-sm md:text-base font-bold">{box.subtitle}</p>
           </div>
         ))}
       </div>

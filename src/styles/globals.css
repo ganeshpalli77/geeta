@@ -128,7 +128,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Baloo 2', sans-serif;
   }
 }
 
@@ -189,4 +189,36 @@
 
 html {
   font-size: var(--font-size);
+}
+
+@keyframes fadeInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-left {
+  animation: fadeInFromLeft 0.7s ease-out forwards;
+}
+
+.animate-fade-in-right {
+  animation: fadeInFromRight 0.7s ease-out forwards;
 }

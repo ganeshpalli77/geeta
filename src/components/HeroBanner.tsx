@@ -27,16 +27,16 @@ export function HeroBanner({ onOpenAuth, isAuthenticated }: HeroBannerProps) {
             alt="Geeta Jayanti Olympiad"
             className="w-[220px] sm:w-[280px] md:w-[350px] lg:w-[400px]"
           />
-          <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#822A12] text-center px-4" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+          <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#822A12] text-center px-4 font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
             ज्ञान प्रवाह से ज्ञान आत्मबल तक - <br/> चलो जगाए गीता की ज्योति
           </p>
-          <p className="text-sm sm:text-base md:text-lg lg:text-[20px] text-[#193C77] text-center" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+          <p className="text-sm sm:text-base md:text-lg lg:text-[20px] text-[#193C77] text-center font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
             15 नवंबर 2025 से 31 दिसंबर 2025
           </p>
           {!isAuthenticated && (
             <button 
               onClick={() => onOpenAuth?.('register')}
-              className="bg-[#D55328] hover:bg-[#C44820] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-[25px] transition-colors w-auto"
+              className="bg-[#B54520] hover:bg-[#9C3B1B] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-[25px] transition-colors w-auto font-bold"
             >
               Register
             </button>
