@@ -280,7 +280,10 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
             </Button>
             <Button 
               onClick={() => onOpenAuth('register')}
-              className="bg-[#B54520] hover:bg-[#9C3B1B] rounded-[25px] px-4 sm:px-6 font-bold"
+              className="bg-[#B54520] hover:bg-[#9C3B1B] text-white rounded-[25px] px-4 sm:px-6 font-bold"
+              style={{ color: '#FFFFFF', backgroundColor: '#B54520' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}
             >
               <UserPlus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Register</span>
@@ -288,7 +291,12 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
           </>
         )}
         {!onOpenAuth && (
-          <Button className="bg-[#B54520] hover:bg-[#9C3B1B] rounded-[25px] px-4 sm:px-6 font-bold">
+          <Button 
+            className="bg-[#B54520] hover:bg-[#9C3B1B] text-white rounded-[25px] px-4 sm:px-6 font-bold"
+            style={{ color: '#FFFFFF', backgroundColor: '#B54520' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}
+          >
             Register
           </Button>
         )}
