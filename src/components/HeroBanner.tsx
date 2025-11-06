@@ -21,7 +21,7 @@ export function HeroBanner({ onOpenAuth, isAuthenticated }: HeroBannerProps) {
       {/* Content Container with padding */}
       <div className="relative z-10 w-full max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 lg:px-20 flex items-center justify-center md:justify-end">
         {/* Right side - Text content */}
-        <div className="w-full md:w-[55%] flex flex-col items-center space-y-4 sm:space-y-6 py-8 sm:py-0">
+        <div className="w-full md:w-[55%] flex flex-col items-center space-y-4 sm:space-y-6 py-8 sm:py-0 pb-12 sm:pb-8">
           <img
             src={olympiadLogo}
             alt="Geeta Jayanti Olympiad"
@@ -36,7 +36,14 @@ export function HeroBanner({ onOpenAuth, isAuthenticated }: HeroBannerProps) {
           {!isAuthenticated && (
             <button 
               onClick={() => onOpenAuth?.('register')}
-              className="bg-[#B54520] hover:bg-[#9C3B1B] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-[25px] transition-colors w-auto font-bold"
+              className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-[25px] transition-colors w-auto font-bold shadow-lg relative z-20 min-w-[120px]"
+              style={{ 
+                backgroundColor: '#B54520',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}
             >
               Register
             </button>
