@@ -103,7 +103,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {language && changeLanguage && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]">
+                    <Button variant="ghost" size="sm" className="text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold">
                       <Globe className="w-4 h-4 mr-2" />
                       <span className="hidden sm:inline">{language === 'en' ? 'EN' : 'हिं'}</span>
                     </Button>
@@ -123,7 +123,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {!isAdmin && currentProfile && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hidden sm:flex text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]">
+                    <Button variant="ghost" size="sm" className="hidden sm:flex text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold">
                       <User className="w-4 h-4 mr-2" />
                       {currentProfile.name}
                     </Button>
@@ -149,7 +149,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="hidden sm:flex text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]"
+                  className="hidden sm:flex text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   {t?.('logout') || 'Logout'}
@@ -159,13 +159,13 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {/* Hamburger Menu with Sheet */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <button className="p-2 hover:bg-[#D55328] rounded-lg transition-colors">
-                    <Menu className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-[#D55328] hover:text-white" />
+                  <button className="p-2 hover:bg-[#B54520] rounded-lg transition-colors font-bold">
+                    <Menu className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-[#B54520] hover:text-white" />
                   </button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white border-l-2">
                   <SheetHeader>
-                    <SheetTitle className="text-left text-[#D55328]">Menu</SheetTitle>
+                  <SheetTitle className="text-left text-[#B54520] font-bold">Menu</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col gap-2 mt-6">
                     {/* Navigation Items */}
@@ -176,14 +176,14 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                         disabled={quizInProgress && currentPage === 'quiz' && item.id !== 'quiz'}
                         className={`flex items-center gap-3 px-4 py-3 rounded-[25px] transition-colors text-left ${
                           currentPage === item.id
-                            ? 'bg-[#D55328] text-white'
+                            ? 'bg-[#B54520] text-white'
                             : quizInProgress && currentPage === 'quiz' && item.id !== 'quiz'
                             ? 'text-gray-400 cursor-not-allowed opacity-50'
-                            : 'text-gray-700 hover:bg-[#D55328] hover:text-white'
+                            : 'text-gray-700 hover:bg-[#B54520] hover:text-white'
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
-                        <span>{item.label}</span>
+                        <span className="font-bold">{item.label}</span>
                       </button>
                     ))}
 
@@ -197,11 +197,11 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                           className={`flex items-center gap-3 px-4 py-3 rounded-[25px] transition-colors text-left sm:hidden ${
                             quizInProgress && currentPage === 'quiz'
                               ? 'text-gray-400 cursor-not-allowed opacity-50'
-                              : 'text-gray-700 hover:bg-[#D55328] hover:text-white'
+                              : 'text-gray-700 hover:bg-[#B54520] hover:text-white'
                           }`}
                         >
                           <User className="w-5 h-5" />
-                          <span>{t?.('profile') || 'Profile'}</span>
+                          <span className="font-bold">{t?.('profile') || 'Profile'}</span>
                         </button>
                       </>
                     )}
@@ -213,10 +213,10 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                           logout();
                           setMobileMenuOpen(false);
                         }}
-                        className="flex items-center gap-3 px-4 py-3 rounded-[25px] text-gray-700 hover:bg-[#D55328] hover:text-white transition-colors text-left sm:hidden"
+                        className="flex items-center gap-3 px-4 py-3 rounded-[25px] text-gray-700 hover:bg-[#B54520] hover:text-white transition-colors text-left sm:hidden"
                       >
                         <LogOut className="w-5 h-5" />
-                        <span>{t?.('logout') || 'Logout'}</span>
+                        <span className="font-bold">{t?.('logout') || 'Logout'}</span>
                       </button>
                     )}
                   </div>
@@ -231,12 +231,12 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-[#D55328]" />
+                <AlertTriangle className="w-5 h-5 text-[#B54520]" />
                 Quiz in Progress
               </AlertDialogTitle>
               <AlertDialogDescription>
                 You have a quiz in progress. If you navigate away, your quiz progress will be lost and you won't be able to submit it.
-                <span className="block mt-2 text-[#D55328]">
+                <span className="block mt-2 text-[#B54520]">
                   Please finish and submit your quiz before navigating to other pages.
                 </span>
               </AlertDialogDescription>
@@ -273,14 +273,14 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
             <Button 
               variant="outline"
               onClick={() => onOpenAuth('login')}
-              className="hidden sm:flex border-[#D55328] text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px] px-4 lg:px-6"
+              className="hidden sm:flex border-[#B54520] text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] px-4 lg:px-6 font-bold"
             >
               <LogIn className="w-4 h-4 mr-2" />
               Login
             </Button>
             <Button 
               onClick={() => onOpenAuth('register')}
-              className="bg-[#D55328] hover:bg-[#C44820] rounded-[25px] px-4 sm:px-6"
+              className="bg-[#B54520] hover:bg-[#9C3B1B] rounded-[25px] px-4 sm:px-6 font-bold"
             >
               <UserPlus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Register</span>
@@ -288,7 +288,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
           </>
         )}
         {!onOpenAuth && (
-          <Button className="bg-[#D55328] hover:bg-[#C44820] rounded-[25px] px-4 sm:px-6">
+          <Button className="bg-[#B54520] hover:bg-[#9C3B1B] rounded-[25px] px-4 sm:px-6 font-bold">
             Register
           </Button>
         )}

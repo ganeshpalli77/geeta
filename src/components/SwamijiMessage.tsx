@@ -25,7 +25,7 @@ export function SwamijiMessage() {
       
       <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-12 max-w-7xl mx-auto">
         {/* Left - Swamiji Photo */}
-        <div className="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 relative">
+        <div className="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 relative mx-auto lg:mx-0 animate-fade-in-left">
           {/* Background Circle */}
           <img
             src={gurujiBackground}
@@ -42,13 +42,20 @@ export function SwamijiMessage() {
         
         {/* Right - Message */}
         <div 
-          className="w-full lg:w-2/3 space-y-3 md:space-y-4 p-6 md:p-8 bg-[#D55328] rounded-2xl"
+          className="w-full lg:w-2/3 space-y-3 md:space-y-4 p-6 md:p-8 animate-fade-in-right"
+          style={{ 
+            backgroundColor: '#B54520',
+            borderTopLeftRadius: '16px',
+            borderBottomLeftRadius: '16px',
+            borderTopRightRadius: '50px',
+            borderBottomRightRadius: '50px'
+          }}
         >
-          <p className="text-sm sm:text-base md:text-lg text-white leading-relaxed" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
-            श्रीमद्भगवद्गीता एक ऐसा अमृत ग्रन्थ है जो हमें जीवन के हर पहलू में मार्गदर्शन देता है। यह ओलंपियाड एक अनूठा अवसर है युवाओं और बच्चों के लिए गीता के ज्ञान को समझने और अपने जीवन में उतारने का। मैं सभी प्रतिभागियों को आशीर्वाद देता हूं कि वे इस पवित्र ज्ञान यात्रा में पूर्ण समर्पण और उत्साह के साथ भाग लें। गीता का ज्ञान ही हमें आत्मबल प्रदान करता है और जीवन की हर चुनौती का सामना करने की शक्ति देता है।
+          <p className="text-sm sm:text-base md:text-lg text-white leading-relaxed font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+            भारतीय संस्कृति का समग्र ज्ञान भगवद्गीता में समाहित है। वेदों का विस्तार है उपनिषद और भगवद्गीता उपनिषदों का सार है। योगेश्वर श्रीकृष्ण द्वारा की गई योगशास्त्र की शोभायमान और सुंदर अभिव्यक्ति है भगवद्गीता !
           </p>
-          <p className="text-xs sm:text-sm text-white italic">
-            — परम पूज्य स्वामी जी
+          <p className="text-xs sm:text-sm text-white italic font-bold">
+            — परम पूज्य स्वामी गोविंददेवगिरि महाराज
           </p>
         </div>
       </div>

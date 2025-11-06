@@ -25,7 +25,7 @@ export function Timeline() {
   return (
     <section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-6 md:py-8">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#193C77] text-center mb-8 md:mb-12">Timeline</h2>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#193C77] text-center mb-8 md:mb-12 font-bold">Timeline</h2>
         
         <div className="relative flex flex-col sm:flex-row justify-between items-center sm:items-start gap-8 sm:gap-4">
           {milestones.map((milestone, index) => (
@@ -37,10 +37,10 @@ export function Timeline() {
                   className="w-12 h-12 md:w-16 md:h-16"
                 />
               </div>
-              <h3 className="text-base md:text-lg text-[#193C77] text-center mb-2">{milestone.title}</h3>
-              <p className="text-xs md:text-sm text-[#822A12] text-center">{milestone.date}</p>
+              <h3 className="text-base md:text-lg text-[#193C77] text-center mb-2 font-bold">{milestone.title}</h3>
+              <p className="text-xs md:text-sm text-[#822A12] text-center font-bold">{milestone.date}</p>
               {milestone.date2 && (
-                <p className="text-xs md:text-sm text-[#822A12] text-center">{milestone.date2}</p>
+                <p className="text-xs md:text-sm text-[#822A12] text-center font-bold">{milestone.date2}</p>
               )}
             </div>
           ))}
