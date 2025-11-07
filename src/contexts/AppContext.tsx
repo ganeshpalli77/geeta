@@ -24,7 +24,7 @@ import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 export interface UserProfile {
   id: string;
   name: string;
-  prn: string;
+  prn?: string;
   dob: string;
   preferredLanguage: string;
   category?: string;
@@ -435,7 +435,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newProfile = await profileAPI.createProfile({
         userId: state.user.id,
         name: profileData.name,
-        prn: profileData.prn,
+        prn: profileData.prn?.trim() || undefined,
         dob: profileData.dob,
         preferredLanguage: profileData.preferredLanguage,
       });
@@ -471,7 +471,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (profileId: string, updates: Partial<UserProfile>) => {
     try {
-      await profileAPI.updateProfile(profileId, updates);
+      // Normalize empty PRN strings to undefined
+      const normalizedUpdates = {
+        ...updates,
+        prn: updates.prn?.trim() || undefined,
+      };
+      await profileAPI.updateProfile(profileId, normalizedUpdates);
       
       // Reload profile data
       if (state.currentProfile?.id === profileId) {

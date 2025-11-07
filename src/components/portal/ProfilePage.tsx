@@ -44,8 +44,8 @@ export function ProfilePage() {
   });
 
   const handleCreateProfile = () => {
-    if (!formData.name || !formData.prn || !formData.dob) {
-      toast.error('Please fill all fields');
+    if (!formData.name || !formData.dob) {
+      toast.error('Please fill required fields');
       return;
     }
 
@@ -58,8 +58,8 @@ export function ProfilePage() {
   const handleUpdateProfile = () => {
     if (!currentProfile) return;
     
-    if (!formData.name || !formData.prn || !formData.dob) {
-      toast.error('Please fill all fields');
+    if (!formData.name || !formData.dob) {
+      toast.error('Please fill required fields');
       return;
     }
 
@@ -126,13 +126,14 @@ export function ProfilePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-prn" className="text-gray-700">{t('prn')}</Label>
+                        <Label htmlFor="edit-prn" className="text-gray-700">{t('prn')} (Optional)</Label>
                         <Input
                           id="edit-prn"
                           value={formData.prn}
                           onChange={(e) =>
                             setFormData({ ...formData, prn: e.target.value })
                           }
+                          placeholder="Enter your PRN (optional)"
                           className="border-gray-300 focus:border-[#D55328] focus:ring-[#D55328]"
                         />
                       </div>
@@ -185,7 +186,7 @@ export function ProfilePage() {
                   </div>
                   <div>
                     <h3 className="text-xl sm:text-2xl text-[#822A12]">{currentProfile.name}</h3>
-                    <p className="text-gray-600">{currentProfile.prn}</p>
+                    <p className="text-gray-600">{currentProfile.prn || 'No PRN provided'}</p>
                   </div>
                 </div>
 
@@ -242,14 +243,14 @@ export function ProfilePage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="prn" className="text-gray-700">{t('prn')}</Label>
+                        <Label htmlFor="prn" className="text-gray-700">{t('prn')} (Optional)</Label>
                         <Input
                           id="prn"
                           value={formData.prn}
                           onChange={(e) =>
                             setFormData({ ...formData, prn: e.target.value })
                           }
-                          placeholder="Enter your PRN"
+                          placeholder="Enter your PRN (optional)"
                           className="border-gray-300 focus:border-[#D55328] focus:ring-[#D55328]"
                         />
                       </div>
@@ -334,14 +335,14 @@ export function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="new-prn" className="text-gray-700">{t('prn')}</Label>
+                      <Label htmlFor="new-prn" className="text-gray-700">{t('prn')} (Optional)</Label>
                       <Input
                         id="new-prn"
                         value={formData.prn}
                         onChange={(e) =>
                           setFormData({ ...formData, prn: e.target.value })
                         }
-                        placeholder="Enter your PRN"
+                        placeholder="Enter your PRN (optional)"
                         className="border-gray-300 focus:border-[#D55328] focus:ring-[#D55328]"
                       />
                     </div>
@@ -413,7 +414,7 @@ export function ProfilePage() {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg text-[#822A12]">{profile.name}</h3>
-                        <p className="text-sm text-gray-600">{profile.prn}</p>
+                        <p className="text-sm text-gray-600">{profile.prn || 'No PRN provided'}</p>
                       </div>
                       {currentProfile?.id === profile.id && (
                         <div className="px-3 py-1 bg-[#D55328] text-white rounded-full text-sm">

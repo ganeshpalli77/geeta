@@ -21,7 +21,7 @@ export interface Profile {
   _id: string;
   userId: string;
   name: string;
-  prn: string;
+  prn?: string;
   dob: string;
   preferredLanguage: string;
   category: 'kids' | 'youth' | 'senior'; // Based on age

@@ -235,7 +235,7 @@ export function AdminPanel() {
                         {user.profiles.map((profile: any) => (
                           <div key={profile.id} className="text-sm">
                             <span className="text-[#193C77]">{profile.name}</span>
-                            <span className="text-gray-500"> - {profile.prn}</span>
+                            <span className="text-gray-500">{profile.prn ? ` - ${profile.prn}` : ' (No PRN)'}</span>
                           </div>
                         ))}
                       </div>
