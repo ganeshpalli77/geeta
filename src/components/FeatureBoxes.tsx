@@ -5,7 +5,7 @@ export function FeatureBoxes() {
       buttonText: 'View'
     },
     {
-      title: 'Thoughts of the Day',
+      title: 'Shloka of the Day',
       buttonText: 'Read'
     },
     {
@@ -22,8 +22,8 @@ export function FeatureBoxes() {
             key={index}
             className="w-full sm:flex-1 sm:max-w-[400px] h-[120px] sm:h-[150px] bg-[#ffe1a6] flex flex-col items-center justify-center gap-3 md:gap-4"
           >
-            <h3 className="text-[#193C77] text-lg md:text-xl font-bold">{feature.title}</h3>
-            <button className="bg-[#B54520] hover:bg-[#9C3B1B] text-white px-5 md:px-6 py-2 rounded-[25px] transition-colors text-sm md:text-base font-bold">
+            <h3 className="text-[#193C77] text-[22px] md:text-[24px] font-bold">{feature.title}</h3>
+            <button className="bg-[#B54520] hover:bg-[#9C3B1B] text-white px-5 md:px-6 py-2 rounded-[25px] transition-colors text-sm md:text-base font-bold" style={{ color: '#FFFFFF', backgroundColor: '#B54520' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}>
               {feature.buttonText}
             </button>
           </div>

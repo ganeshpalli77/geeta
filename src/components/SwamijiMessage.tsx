@@ -42,13 +42,9 @@ export function SwamijiMessage() {
         
         {/* Right - Message */}
         <div 
-          className="w-full lg:w-2/3 space-y-3 md:space-y-4 p-6 md:p-8 animate-fade-in-right"
+          className="w-full lg:w-2/3 space-y-3 md:space-y-4 p-6 md:p-8 animate-fade-in-right rounded-2xl"
           style={{ 
-            backgroundColor: '#B54520',
-            borderTopLeftRadius: '16px',
-            borderBottomLeftRadius: '16px',
-            borderTopRightRadius: '50px',
-            borderBottomRightRadius: '50px'
+            backgroundColor: '#B54520'
           }}
         >
           <p className="text-sm sm:text-base md:text-lg text-white leading-relaxed font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
