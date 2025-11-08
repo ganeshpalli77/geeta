@@ -27,12 +27,28 @@ export function HeroBanner({ onOpenAuth, isAuthenticated }: HeroBannerProps) {
             alt="Geeta Jayanti Olympiad"
             className="w-[220px] sm:w-[280px] md:w-[350px] lg:w-[400px]"
           />
-          <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#822A12] text-center px-4 font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
-            ज्ञान प्रवाह से ज्ञान आत्मबल तक - <br/> चलो जगाए गीता की ज्योति
+          
+          {/* <p className="text-base sm:text-lg md:text-xl lg:text-[22px] text-[#822A12] text-center px-4 font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+            ज्ञान प्रवेश से ज्ञान आलोक तक - <br/> चलो जगाएं गीता की ज्योत
+          </p> */}
+          
+          <p className="text-3xl sm:text-4xl md:text-5xl lg:text-[46px] text-[#822A12] text-center px-8 font-black tracking-tight leading-snug"
+            style={{ 
+              fontFamily: 'Noto Sans Devanagari, sans-serif', WebkitTextStroke: '0.3px #5e1b0d' }}>
+              ज्ञान प्रवेश से ज्ञान आलोक तक - <br /> चलो जगाएं गीता की ज्योत
           </p>
-          <p className="text-sm sm:text-base md:text-lg lg:text-[20px] text-[#193C77] text-center font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+
+           
+          {/* <p className="text-sm sm:text-base md:text-lg lg:text-[20px] text-[#193C77] text-center font-bold" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
             15 नवंबर 2025 से 31 दिसंबर 2025
+          </p> */}
+          
+          <p className="text-base sm:text-lg md:text-xl lg:text-[24px] text-[#193C77] text-center font-extrabold leading-snug"
+            style={{ 
+              fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+              15 नवंबर 2025 से 31 दिसंबर 2025
           </p>
+
           {!isAuthenticated && (
             <button 
               onClick={() => onOpenAuth?.('register')}

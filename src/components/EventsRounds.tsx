@@ -11,19 +11,19 @@ export function EventsRounds() {
   const rounds = [
     {
       title: 'प्रश्न योद्धा',
-      subtitle: 'The foundational quiz level for all participants to test their basic knowledge of the Bhagavad Geeta.',
+      subtitle: "The foundational level quiz for all participants to test their basic knowledge of the Bhagavad Geeta's Princiles.",
       accentColor: '#193C77',
       image: firstRoundImage
     },
     {
       title: 'ज्ञान प्रवीण',
-      subtitle: 'A challenging step up that explores deeper concepts and teachings from the Geeta.',
+      subtitle: 'A challenging step up,designed to solidfy your conceptual knowledge.',
       accentColor: '#B54520',
       image: secondRoundImage
     },
     {
       title: 'विद्या धुरंधर',
-      subtitle: 'Final, most comprehensive round where participants demonstrate mastery of Geeta wisdom.',
+      subtitle: 'The Final, most comprehensive quiz round that lights up your complete grasp of the subject.',
       accentColor: '#193C77',
       image: thirdRoundImage
     }
@@ -42,7 +42,7 @@ export function EventsRounds() {
     },
     {
       title: 'दॄश्य सृजन',
-      subtitle: 'Create reels on given topics or the offline Geet Jayanti event.',
+      subtitle: 'Reel making OR an offline Geeta Jayanti event.',
       icon: reelsEventImage
     },
     {
