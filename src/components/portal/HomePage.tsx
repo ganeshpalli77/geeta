@@ -21,7 +21,9 @@ export function HomePage({ onOpenAuth }: HomePageProps) {
   const { isAuthenticated } = useApp();
   
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-screen w-[900px] bg-white" 
+    style={{ maxWidth: 1200, margin: '0 auto' }}
+    >
       {/* Header */}
       {/* <Header onOpenAuth={onOpenAuth} /> */}
       
@@ -33,7 +35,7 @@ export function HomePage({ onOpenAuth }: HomePageProps) {
         <div className="py-8 sm:py-12 md:py-16 lg:py-20">
           
           {/* Step 3: Swamiji Message Section - Full Width */}
-          <div className="mb-12 sm:mb-16 md:mb-20 lg:mb-[120px]">
+          <div className="mb-8 sm:mb-12 md:mb-16 lg:mb-[60px]">
             <SwamijiMessage />
           </div>
           
@@ -47,17 +49,15 @@ export function HomePage({ onOpenAuth }: HomePageProps) {
           <CelebrationBoxes />
           
           {/* Step 7: Timeline Section - Full Width */}
-          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
+          <div className="mt-4 sm:mt-8 md:mt-8 lg:mt-8">
             <Timeline />
           </div>
           
           {/* Step 11: Closing CTA Banner - Full Width */}
-          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
-            <CTABanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
-          </div>
+          <CTABanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
           
           {/* Step 8: Events & Rounds Section */}
-          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
+          <div className="mt-8 sm:mt-12 md:mt-16 lg:mt-[60px]">
             <EventsRounds />
           </div>
           

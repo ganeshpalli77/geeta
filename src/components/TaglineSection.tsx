@@ -22,10 +22,20 @@ export function TaglineSection() {
 
         {/* Text Content */}
         <div className="flex-1 text-center px-4">
-          <div className="text-lg sm:text-xl md:text-2xl text-white mb-2">
+          <div className="text-white mb-2"
+            style={{
+              fontWeight: 700,
+              fontSize: '40px'
+            }}
+          >
             Learn, participate, and rise to
           </div>
-          <div className="text-2xl sm:text-3xl md:text-4xl text-[#ffca58]">
+          <div className="text-2xl sm:text-3xl md:text-4xl text-[#ffca58]"
+          style={{
+              fontWeight: 700,
+              fontSize: '45px'
+            }}
+          >
             The Geeta Olympiad Grand Finale
           </div>
         </div>

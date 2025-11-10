@@ -6,7 +6,7 @@ import treeBranch from 'figma:asset/4b035e5a54e0630a8e20bbfcdcc5ad1fef238061.png
 
 export function SwamijiMessage() {
   return (
-    <section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-8 md:py-16 relative">
+    <section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-8 md:py-0 relative">
       {/* Decorative tree branch elements - hidden on mobile */}
       <div className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 scale-x-[-1]">
         <img

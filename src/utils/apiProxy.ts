@@ -4,8 +4,9 @@
 import { mockDb } from './mockDb';
 
 // Configuration
-const USE_MOCK_API = true; // Set to false to use real backend API
-const API_BASE_URL = 'http://localhost:5000/api'; // Change to your backend URL
+const USE_MOCK_API = false; // Set to false to use real backend API
+//const API_BASE_URL = import.meta.env.API_URL; // Change to your backend URL
+const API_BASE_URL = "https://play.learngeeta.com:5000/api"; // Change to your backend URL
 
 // Types
 export interface User {
@@ -24,7 +25,7 @@ export interface Profile {
   prn?: string;
   dob: string;
   preferredLanguage: string;
-  category: 'kids' | 'youth' | 'senior'; // Based on age
+  category: string; // Based on age
   createdAt?: string;
   updatedAt?: string;
 }

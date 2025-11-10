@@ -115,6 +115,7 @@ export interface LeaderboardEntry {
 }
 
 interface AppContextType extends AppState {
+  sendOTP: (email?: string, phone?: string) => Promise<boolean>;
   login: (email: string, otp: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
   logout: () => void;
@@ -194,6 +195,128 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   });
 
+  // Save to sessionStorage whenever state changes
+  useEffect(() => {
+    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
+  }, [state]);
+
+  const sendOTP = async (email?: string, phone?: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.sendOTP(email, phone);
+      console.log(result);
+      if (result.success) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      // Only log unexpected errors (not validation errors)
+      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
+        console.error('Login error:', error);
+      }
+      return false;
+    }
+  };
+
+  const login = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.verifyOTP(email, otp, 'email');
+      
+      if (result.success) {
+        // Get user's profiles
+        //const profiles = await profileAPI.getProfilesByUser(result.user._id);
+        const profiles = await profileAPI.getProfilesByUser("0");
+        const user = convertApiUserToUser(result.user, profiles);
+
+        setState(prev => ({
+          ...prev,
+          user,
+          isAuthenticated: true,
+          isAdmin: false,
+        }));
+
+        // If user has profiles, load the first one
+        if (profiles.length > 0) {
+          await loadProfileData(profiles[0]._id);
+        }
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      // Only log unexpected errors (not validation errors)
+      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
+        console.error('Login error:', error);
+      }
+      return false;
+    }
+  };
+
+  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.verifyOTP(phone, otp, 'phone');
+      
+      if (result.success) {
+        //const profiles = await profileAPI.getProfilesByUser(result.user._id);
+        const profiles = await profileAPI.getProfilesByUser("0");
+        const user = convertApiUserToUser(result.user, profiles);
+
+        setState(prev => ({
+          ...prev,
+          user,
+          isAuthenticated: true,
+          isAdmin: false,
+        }));
+
+        if (profiles.length > 0) {
+          await loadProfileData(profiles[0]._id);
+        }
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      // Only log unexpected errors (not validation errors)
+      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
+        console.error('Login error:', error);
+      }
+      return false;
+    }
+  };
+
+  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.adminLogin(username, password);
+      
+      if (result.success) {
+        setState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          isAdmin: true,
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setState(prev => ({
+      ...prev,
+      user: null,
+      currentProfile: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      quizAttempts: [],
+      videoSubmissions: [],
+      sloganSubmissions: [],
+      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
+    }));
+    sessionStorage.removeItem('geetaOlympiadSession');
+  };
+
   const loadProfileData = async (profileId: string) => {
     try {
       const [profile, quizAttempts, videos, slogans, parts] = await Promise.all([
@@ -229,6 +352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /*
   // Check Supabase auth state on mount and on auth changes
   useEffect(() => {
     // Check initial session
@@ -316,103 +440,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }));
     }
   };
-
-  // Save to sessionStorage whenever state changes
-  useEffect(() => {
-    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
-  }, [state]);
-
-  const login = async (email: string, otp: string): Promise<boolean> => {
-    try {
-      // Verify OTP with Supabase
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'email',
-      });
-
-      if (error) {
-        console.error('Supabase OTP verification error:', error);
-        return false;
-      }
-
-      if (data.user && data.session) {
-        // Auth state change will be handled by onAuthStateChange listener
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  };
-
-  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
-    try {
-      // Verify OTP with Supabase
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone,
-        token: otp,
-        type: 'sms',
-      });
-
-      if (error) {
-        console.error('Supabase OTP verification error:', error);
-        return false;
-      }
-
-      if (data.user && data.session) {
-        // Auth state change will be handled by onAuthStateChange listener
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  };
-
-  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.adminLogin(username, password);
-      
-      if (result.success) {
-        setState(prev => ({
-          ...prev,
-          isAuthenticated: true,
-          isAdmin: true,
-        }));
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Admin login error:', error);
-      return false;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-    
-    setState(prev => ({
-      ...prev,
-      user: null,
-      currentProfile: null,
-      isAuthenticated: false,
-      isAdmin: false,
-      quizAttempts: [],
-      videoSubmissions: [],
-      sloganSubmissions: [],
-      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
-    }));
-    sessionStorage.removeItem('geetaOlympiadSession');
-  };
+*/
 
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
     if (!state.user) return;
@@ -438,6 +466,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         prn: profileData.prn?.trim() || undefined,
         dob: profileData.dob,
         preferredLanguage: profileData.preferredLanguage,
+        category: 'kids'
       });
 
       const profiles = await profileAPI.getProfilesByUser(state.user.id);
@@ -682,6 +711,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppContextType = {
     ...state,
+    sendOTP,
     login,
     loginWithPhone,
     logout,

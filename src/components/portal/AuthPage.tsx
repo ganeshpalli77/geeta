@@ -15,7 +15,7 @@ interface AuthPageProps {
 }
 
 export function AuthPage({ mode = 'login' }: AuthPageProps) {
-  const { login, loginWithPhone, loginAsAdmin, language } = useApp();
+  const { sendOTP, login, loginWithPhone, loginAsAdmin, language } = useApp();
   const t = useTranslation(language);
   const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
@@ -41,39 +41,17 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     setLoading(true);
     
     try {
-      if (loginMethod === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
-
-        if (error) {
-          toast.error(error.message || 'Failed to send OTP');
-          setLoading(false);
-          return;
-        }
-
-        toast.success('OTP sent to your email!');
-        setStep('otp');
-      } else {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
-
-        if (error) {
-          toast.error(error.message || 'Failed to send OTP');
-          setLoading(false);
-          return;
-        }
-
-        toast.success('OTP sent to your phone!');
-        setStep('otp');
-      }
+        let success = false;
+        let emailTO = email;
+        let phoneTO = phone;
+      
+        success = await sendOTP(emailTO, phoneTO);
+        if (success) {
+          toast.success('OTP sent!');
+          setStep('otp');
+        } else {
+          toast.error('Failed to send OTP. Please try again.');
+        } 
     } catch (error) {
       console.error('Error sending OTP:', error);
       toast.error('Failed to send OTP. Please try again.');

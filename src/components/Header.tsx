@@ -273,10 +273,10 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
             <Button 
               variant="outline"
               onClick={() => onOpenAuth('login')}
-              className="hidden sm:flex border-[#B54520] text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] px-4 lg:px-6 font-bold"
+              className="sm:flex border-[#B54520] text-[#B54520] hover:bg-[#B54520] rounded-[25px] px-4 sm:px-6 font-bold"
             >
-              <LogIn className="w-4 h-4 mr-2" />
-              Login
+              <LogIn className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Login</span>
             </Button>
             <Button 
               onClick={() => onOpenAuth('register')}
