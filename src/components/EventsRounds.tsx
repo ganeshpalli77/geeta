@@ -60,90 +60,57 @@ export function EventsRounds() {
 			<div className="max-w-7xl mx-auto relative">
 				{/* Title positioned on top border */}
 				<div className="flex justify-center absolute left-1/2 -translate-x-1/2 -top-4 md:-top-6 z-10">
-					<div
-						className="text-white px-4 py-2 rounded-[25px] text-xl sm:text-sm md:text-2xl text-center"
-						style={{
-							backgroundColor: "#981a1d",
-							fontWeight: 500,
-						}}
-					>
+					<div className="bg-[#981a1d] text-white px-4 py-2 rounded-[25px] text-xl sm:text-sm md:text-2xl text-center font-medium">
 						Events & Rounds
 					</div>
 				</div>
 
-				<div
-					className="border-2 border-[#b3c5d8] rounded-2xl md:rounded-3xl pt-12 "
-					style={{
-						backgroundColor: "#fff",
-					}}
-				>
+				<div className="bg-[#fff] border-2 border-[#b3c5d8] rounded-2xl md:rounded-3xl pt-12">
 					{/* Rounds */}
-          <div className="px-8 ">
-					<div
-						className="flex flex-col md:flex-row justify-center gap-4 md:gap-8"
-					>
-						{rounds.map((round, index) => (
-							<div
-								key={index}
-								className="flex-1 bg-white rounded-2xl overflow-hidden shadow-lg"
-								style={{
-									borderRadius: "40px",
-									backgroundColor: "#fff6e1",
-								}}
-							>
-								<div
-									className="p-4 md:p-6 space-y-3 md:space-y-4"
-									style={{ backgroundColor: round.accentColor }}
-								>
-									{round.image && (
-										<div className="flex justify-center mb-3 md:mb-4">
-											<div
-												className="w-20 h-20"
-												style={{ backgroundColor: round.accentColor }}
-											>
-												<img
-													src={round.image}
-													alt={round.title}
-													className="w-full h-full object-contain"
-												/>
+					<div className="px-8 ">
+						<div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8">
+							{rounds.map((round, index) => (
+								<div key={index} className=" bg-[#fff6e1]flex-1 bg-white rounded-2xl overflow-hidden shadow-lg rounded-[40px]">
+									<div
+										className="p-4 md:p-6 space-y-3 md:space-y-4"
+										style={{ backgroundColor: round.accentColor }}
+									>
+										{round.image && (
+											<div className="flex justify-center mb-3 md:mb-4">
+												<div className="w-20 h-20" style={{ backgroundColor: round.accentColor }} >
+													<img
+														src={round.image}
+														alt={round.title}
+														className="w-full h-full object-contain"
+													/>
+												</div>
 											</div>
-										</div>
-									)}
+										)}
+									</div>
+									<div>
+										<h3 className="text-[#c6570a] text-2xl md:text-2xl text-center p-4 space-y-3 font-bold">
+											{round.title}
+										</h3>
+										<p className="text-lg text-center p-2 space-y-3 font-medium">
+											{round.subtitle}
+										</p>
+									</div>
 								</div>
-								<div>
-									<h3
-										className="text-lg md:text-2xl text-center p-4 space-y-3"
-										style={{
-											color: "#c6570a",
-											fontWeight: "600",
-											fontSize: "28px",
-											clear: "both",
-										}}
-									>
-										{round.title}
-									</h3>
-									<p
-										className="text-base text-center p-2 space-y-3"
-										style={{ fontWeight: "500" }}
-									>
-										{round.subtitle}
-									</p>
-								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
-          </div>
 
 					{/* Additional Event Boxes */}
-					<div className="grid grid-cols-2 sm:grid-cols-4 justify-items-center gap-6 mt-8 md:mt-12"
-            style={{
+					<div
+						className="grid grid-cols-2 sm:grid-cols-4 justify-items-center gap-6 mt-8 md:mt-12"
+						style={{
 							padding: "0rem 1rem",
 						}}
-          >
+					>
 						{additionalEvents.map((event, index) => (
 							<div
 								key={index}
-								className="flex flex-col items-center max-w-[140px]"
+								className="flex flex-col items-center max-w-[250px]"
 							>
 								<div className="mb-2 md:mb-3">
 									{typeof event.icon === "string" &&
@@ -163,20 +130,10 @@ export function EventsRounds() {
 										</div>
 									)}
 								</div>
-								<p
-									className="text-base text-center"
-									style={{
-										color: "#c6570a",
-										fontWeight: "600",
-										fontSize: "18px",
-									}}
-								>
+								<p className="text-[#c6570a] text-xl text-center font-semibold">
 									{event.title}
 								</p>
-								<p
-									className="text-base text-center mt-1"
-									style={{ fontWeight: "500" }}
-								>
+								<p className="text-base text-center mt-1 font-medium">
 									{event.subtitle}
 								</p>
 							</div>
@@ -185,7 +142,7 @@ export function EventsRounds() {
 
 					{/* Bottom Line */}
 					<div className="mt-6 md:mt-8 text-center">
-						<p className="text-xs md:text-sm text-[#193C77]">
+						<p className="text-base md:text-lg text-[#193C77]">
 							Earn Points from all events and head towards Grand Finale
 						</p>
 					</div>

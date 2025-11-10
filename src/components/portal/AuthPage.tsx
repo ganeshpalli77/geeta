@@ -84,11 +84,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     }
   };
 
-  const handleAdminLogin = () => {
+  const handleAdminLogin = async () => {
     setLoading(true);
     
     try {
-      const success = loginAsAdmin(username, password);
+      const success = await loginAsAdmin(username, password);
       
       if (success) {
         toast.success('Admin login successful!');
@@ -111,7 +111,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'user' | 'admin')}>
+      <Tabs value={activeTab} onValueChange={(v:any) => setActiveTab(v as 'user' | 'admin')}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="user">User {mode === 'register' ? 'Registration' : 'Login'}</TabsTrigger>
           <TabsTrigger value="admin">Admin Login</TabsTrigger>
