@@ -5,9 +5,7 @@ import { mockDb } from './mockDb';
 
 // Configuration
 const USE_MOCK_API = false; // Set to false to use real backend API
-//const API_BASE_URL = import.meta.env.API_URL; // Change to your backend URL
-// const API_BASE_URL = "http://play.learngeeta.com:5000/api"; // Change to your backend URL
-const API_BASE_URL = "http://localhost:5180/api"; // Change to your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Types
 export interface User {
