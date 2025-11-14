@@ -23,7 +23,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad && git status && git checkout release && git pull --rebase && git status && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && git status && git checkout release && git pull --rebase && git status 
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/client && git status && git checkout release && git pull --rebase && git status 
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
 
       - name: Execute SSH Command for Main Branch
         if: github.ref == 'refs/heads/main'
@@ -34,4 +36,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad && git status && git checkout main && git pull --rebase && git status && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && git status && git checkout release && git pull --rebase && git status 
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/client && git status && git checkout release && git pull --rebase && git status 
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
