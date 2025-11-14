@@ -37,5 +37,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && git status && git checkout main && git pull --rebase && git status 
+
             sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/client && git status && git checkout main && git pull --rebase && git status 
+
             sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
+            
