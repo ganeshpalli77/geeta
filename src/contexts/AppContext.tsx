@@ -89,6 +89,16 @@ export interface ImagePart {
   collectedDate?: string;
 }
 
+export interface FeatureFlags {
+  dashboard: boolean;
+  quiz: boolean;
+  events: boolean;
+  leaderboard: boolean;
+  imagePuzzle: boolean;
+  videoSubmission: boolean;
+  sloganSubmission: boolean;
+}
+
 export interface AppState {
   user: User | null;
   currentProfile: UserProfile | null;
@@ -102,6 +112,7 @@ export interface AppState {
   leaderboard: ApiLeaderboardEntry[];
   quizInProgress: boolean;
   devMode: boolean;
+  featureFlags: FeatureFlags;
 }
 
 export interface LeaderboardEntry {
@@ -138,6 +149,7 @@ interface AppContextType extends AppState {
   refreshLeaderboard: () => Promise<void>;
   setQuizInProgress: (inProgress: boolean) => void;
   toggleDevMode: () => void;
+  toggleFeatureFlag: (feature: keyof FeatureFlags) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -176,8 +188,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const stored = sessionStorage.getItem('geetaOlympiadSession');
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Ensure devMode exists for backwards compatibility
-      return { ...parsed, devMode: parsed.devMode ?? false };
+      // Ensure devMode and featureFlags exist for backwards compatibility
+      return { 
+        ...parsed, 
+        devMode: parsed.devMode ?? false,
+        featureFlags: parsed.featureFlags ?? {
+          dashboard: true,
+          quiz: true,
+          events: true,
+          leaderboard: true,
+          imagePuzzle: true,
+          videoSubmission: true,
+          sloganSubmission: true,
+        },
+      };
     }
     return {
       user: null,
@@ -192,6 +216,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       leaderboard: [],
       quizInProgress: false,
       devMode: false,
+      featureFlags: {
+        dashboard: true,
+        quiz: true,
+        events: true,
+        leaderboard: true,
+        imagePuzzle: true,
+        videoSubmission: true,
+        sloganSubmission: true,
+      },
     };
   });
 
@@ -709,6 +742,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, devMode: !prev.devMode }));
   };
 
+  const toggleFeatureFlag = (feature: keyof FeatureFlags) => {
+    setState(prev => ({
+      ...prev,
+      featureFlags: {
+        ...prev.featureFlags,
+        [feature]: !prev.featureFlags[feature],
+      },
+    }));
+  };
+
   const value: AppContextType = {
     ...state,
     sendOTP,
@@ -729,6 +772,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshLeaderboard,
     setQuizInProgress,
     toggleDevMode,
+    toggleFeatureFlag,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

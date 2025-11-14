@@ -13,7 +13,7 @@ import { AdminPanel } from './components/portal/AdminPanel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 
 function AppContent() {
-  const { isAuthenticated, isAdmin, currentProfile } = useApp();
+  const { isAuthenticated, isAdmin, currentProfile, featureFlags } = useApp();
   const [currentPage, setCurrentPage] = useState('home');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -76,11 +76,11 @@ function AppContent() {
     <>
       <Header currentPage={currentPage} onNavigate={setCurrentPage} isPortalMode={true} />
       {currentPage === 'home' && <HomePage onOpenAuth={handleOpenAuth} />}
-      {currentPage === 'dashboard' && <DashboardPage />}
+      {featureFlags.dashboard && currentPage === 'dashboard' && <DashboardPage />}
       {currentPage === 'profile' && <ProfilePage />}
-      {currentPage === 'quiz' && <QuizPage />}
-      {currentPage === 'events' && <EventsPage />}
-      {currentPage === 'leaderboard' && <LeaderboardPage />}
+      {featureFlags.quiz && currentPage === 'quiz' && <QuizPage />}
+      {featureFlags.events && currentPage === 'events' && <EventsPage />}
+      {featureFlags.leaderboard && currentPage === 'leaderboard' && <LeaderboardPage />}
       <Toaster position="bottom-right" />
     </>
   );
