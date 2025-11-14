@@ -3,7 +3,8 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - release  # Only trigger on push to release branch
+      - release  # Trigger on push to release branch
+      - main     # Trigger on push to main branch
 
 jobs:
   deploy:
@@ -13,7 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Execute SSH Command
+      - name: Execute SSH Command for Release Branch
+        if: github.ref == 'refs/heads/release'
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -21,16 +23,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            sudo su - 
-            set -x 
-            cd /opt/learngeeta/olympiad
-            git status
-            git checkout release
-            git pull --rebase
-            git status
-            # Add any additional deployment commands here
-            ./setup.sh
-            docker compose down -v
-            docker compose up -d 
-            sleep 5 
-            docker compose logs
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad && git status && git checkout release && git pull --rebase && git status && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
+
+      - name: Execute SSH Command for Main Branch
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            sudo bash -c 'set -x && cd /opt/learngeeta/olympiad && git status && git checkout main && git pull --rebase && git status && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
