@@ -21,11 +21,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            sudo su - 
+            set -x 
             cd /opt/learngeeta/olympiad
-            git pull origin release
+            git status
+            git checkout release
+            git pull --rebase
+            git status
             # Add any additional deployment commands here
             ./setup.sh
             docker compose down -v
             docker compose up -d 
-            sleep 1000 
-            docker compose logs -f
+            sleep 5 
+            docker compose logs

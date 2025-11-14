@@ -1,12 +1,12 @@
 import React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  authAPI, 
-  userAPI, 
-  profileAPI, 
-  quizAPI, 
-  eventAPI, 
-  imagePuzzleAPI, 
+import {
+  authAPI,
+  userAPI,
+  profileAPI,
+  quizAPI,
+  eventAPI,
+  imagePuzzleAPI,
   leaderboardAPI,
   type User as ApiUser,
   type Profile as ApiProfile,
@@ -127,11 +127,11 @@ interface AppContextType extends AppState {
   submitVideo: (submission: Omit<VideoSubmission, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
   submitSlogan: (slogan: string) => Promise<void>;
   collectImagePart: () => Promise<boolean>;
-  getAvailableQuizzes: () => { 
-    mock: { available: boolean; reason?: string }; 
-    quiz1: { available: boolean; reason?: string }; 
-    quiz2: { available: boolean; reason?: string }; 
-    quiz3: { available: boolean; reason?: string }; 
+  getAvailableQuizzes: () => {
+    mock: { available: boolean; reason?: string };
+    quiz1: { available: boolean; reason?: string };
+    quiz2: { available: boolean; reason?: string };
+    quiz3: { available: boolean; reason?: string };
   };
   getTotalScore: () => number;
   loginAsAdmin: (username: string, password: string) => Promise<boolean>;
@@ -220,11 +220,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, otp: string): Promise<boolean> => {
     try {
       const result = await authAPI.verifyOTP(email, otp, 'email');
-      
+
       if (result.success) {
         // Get user's profiles
-        //const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        const profiles = await profileAPI.getProfilesByUser("0");
+        const profiles = await profileAPI.getProfilesByUser(result.user._id);
+        // const profiles = await profileAPI.getProfilesByUser("0");
         const user = convertApiUserToUser(result.user, profiles);
 
         setState(prev => ({
@@ -254,10 +254,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
     try {
       const result = await authAPI.verifyOTP(phone, otp, 'phone');
-      
+
       if (result.success) {
-        //const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        const profiles = await profileAPI.getProfilesByUser("0");
+        const profiles = await profileAPI.getProfilesByUser(result.user._id);
+        // const profiles = await profileAPI.getProfilesByUser("0");
         const user = convertApiUserToUser(result.user, profiles);
 
         setState(prev => ({
@@ -286,7 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
     try {
       const result = await authAPI.adminLogin(username, password);
-      
+
       if (result.success) {
         setState(prev => ({
           ...prev,
@@ -470,7 +470,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
 
       const profiles = await profileAPI.getProfilesByUser(state.user.id);
-      
+
       setState(prev => ({
         ...prev,
         user: prev.user ? {
@@ -506,7 +506,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         prn: updates.prn?.trim() || undefined,
       };
       await profileAPI.updateProfile(profileId, normalizedUpdates);
-      
+
       // Reload profile data
       if (state.currentProfile?.id === profileId) {
         await loadProfileData(profileId);
@@ -591,7 +591,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await imagePuzzleAPI.collectPart(state.currentProfile.id);
-      
+
       if (result.success) {
         setState(prev => ({
           ...prev,
@@ -615,7 +615,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const getAvailableQuizzes = () => {
     if (!state.currentProfile) {
-      return { 
+      return {
         mock: { available: false, reason: 'No profile selected' },
         quiz1: { available: false, reason: 'No profile selected' },
         quiz2: { available: false, reason: 'No profile selected' },
@@ -651,17 +651,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Production mode rules
     return {
       mock: { available: !mockAttempted },
-      quiz1: { 
+      quiz1: {
         available: !quiz1Attempted && mockAttempted,
         reason: !mockAttempted ? 'Complete mock quiz first' : quiz1Attempted ? 'Already attempted' : undefined
       },
-      quiz2: { 
+      quiz2: {
         available: !quiz2Attempted && mockAttempted && today >= quiz2UnlockDate,
-        reason: !mockAttempted ? 'Complete mock quiz first' : 
+        reason: !mockAttempted ? 'Complete mock quiz first' :
                 today < quiz2UnlockDate ? 'Available from Dec 1, 2025' :
                 quiz2Attempted ? 'Already attempted' : undefined
       },
-      quiz3: { 
+      quiz3: {
         available: !quiz3Attempted && mockAttempted && today >= quiz3UnlockDate,
         reason: !mockAttempted ? 'Complete mock quiz first' :
                 today < quiz3UnlockDate ? 'Available from Dec 15, 2025' :

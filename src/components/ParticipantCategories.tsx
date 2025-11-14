@@ -30,15 +30,8 @@ export function ParticipantCategories() {
 		<section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 pt-6 md:pt-8 pb-0 bg-[#fff9df]">
 			<div className="max-w-7xl mx-auto relative">
 				{/* Title positioned on top */}
-				<div className="flex justify-center mb-6 md:mb-8">
-					<div className="text-white px-6 md:px-10 py-3 md:py-4 rounded-[25px] uppercase text-xl sm:text-sm md:text-2xl text-center"
-          style={{ 
-                backgroundColor: '#981a1d',
-                color: '#FFFFFF',
-                fontWeight: 500,
-                padding: '0px 60px',
-              }}
-          >
+				<div className="flex justify-center">
+					<div className="bg-[#981a1d] text-white px-6 md:px-10 py-1 md:py-1 rounded-[25px] uppercase text-xl sm:text-sm md:text-2xl text-center font-bold">
 						Participant Categories
 					</div>
 				</div>
@@ -53,31 +46,13 @@ export function ParticipantCategories() {
 										alt={category.title}
 										className="w-20 h-20 md:w-24 md:h-24 object-contain"
 									/>
-									<h3
-										className="text-lg md:text-xl font-bold"
-										style={{ 
-                      color: "#dc4728",
-                      fontWeight: 700,
-                      fontSize: '28px'
-                     }}
-									>
+									<h3 className="text-[#dc4728] text-2xl md:text-2xl font-bold">
 										{category.title}
 									</h3>
-									<p
-										className="text-sm md:text-base font-bold"
-										style={{ color: "#255a90",
-                      fontWeight: 600,
-                      fontSize: '22px'
-                    }}
-									>
+									<p className="text-[#255a90] text-xl md:text-2xl font-medium">
 										{category.age}
 									</p>
-									<p className="text-sm md:text-base text-black font-bold"
-										style={{ 
-                      fontWeight: 500,
-                      fontSize: '18px'
-                    }}
-                  >
+									<p className="text-base md:text-lg text-black font-medium">
 										{category.subTitle}
 									</p>
 								</div>

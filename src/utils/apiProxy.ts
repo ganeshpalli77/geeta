@@ -6,7 +6,8 @@ import { mockDb } from './mockDb';
 // Configuration
 const USE_MOCK_API = false; // Set to false to use real backend API
 //const API_BASE_URL = import.meta.env.API_URL; // Change to your backend URL
-const API_BASE_URL = "https://play.learngeeta.com:5000/api"; // Change to your backend URL
+// const API_BASE_URL = "http://play.learngeeta.com:5000/api"; // Change to your backend URL
+const API_BASE_URL = "http://localhost:5180/api"; // Change to your backend URL
 
 // Types
 export interface User {
@@ -136,7 +137,7 @@ export const authAPI = {
 
       if (!user) {
         // Create new user
-        const userData = type === 'email' 
+        const userData = type === 'email'
           ? { email: identifier, profiles: [] }
           : { phone: identifier, profiles: [] };
         user = mockDb.insertOne('users', userData) as User;
@@ -401,7 +402,7 @@ export const imagePuzzleAPI = {
     if (USE_MOCK_API) {
       const today = new Date().toDateString();
       const lastCollected = localStorage.getItem('lastImagePartCollected');
-      
+
       if (lastCollected === today) {
         throw new Error('Already collected today');
       }
@@ -461,15 +462,15 @@ export const leaderboardAPI = {
         const quizScore = quizAttempts.reduce((sum, a) => sum + a.score, 0);
 
         // Event score
-        const videos = mockDb.find('videoSubmissions', { 
-          profileId: profile._id, 
-          status: 'approved' 
-        }) as VideoSubmission[];
-        const slogans = mockDb.find('sloganSubmissions', { 
+        const videos = mockDb.find('videoSubmissions', {
           profileId: profile._id,
-          status: 'approved' 
+          status: 'approved'
+        }) as VideoSubmission[];
+        const slogans = mockDb.find('sloganSubmissions', {
+          profileId: profile._id,
+          status: 'approved'
         }) as SloganSubmission[];
-        
+
         const videoScore = videos.reduce((sum, v) => sum + (v.creditScore || 0), 0);
         const sloganScore = slogans.reduce((sum, s) => sum + (s.creditScore || 0), 0);
 

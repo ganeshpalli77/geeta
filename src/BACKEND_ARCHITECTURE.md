@@ -226,7 +226,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/puzzle', puzzleRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
-app.listen(5000, () => {
+app.listen(5180, () => {
   console.log('Server running on port 5000');
 });
 ```

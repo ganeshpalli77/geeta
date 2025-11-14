@@ -8,7 +8,7 @@ export function GrandFinale() {
       <div className="max-w-7xl mx-auto relative pt-6 md:pt-8">
         {/* Title positioned on top */}
         <div className="flex justify-center mb-6 md:mb-8">
-          <div className="bg-[#822A12] text-white px-6 md:px-10 py-3 md:py-4 rounded-[25px] uppercase text-sm md:text-base font-bold">
+          <div className="bg-[#981a1d] text-white px-6 md:px-10 py-1 md:py-1 rounded-[25px] uppercase text-xl sm:text-sm md:text-2xl text-center font-bold">
             The Grand Prizes
           </div>
         </div>
