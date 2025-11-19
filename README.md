@@ -1,7 +1,7 @@
 
-  # LG - Geeta Olympiad - Quiz Branch
+  # Olympiad_GV_Fun
 
-  This is a code bundle for LG - Geeta Olympiad - Quiz Branch. The original project is available at https://www.figma.com/design/7zlP2aAvipnF9XbyPZYDbw/LG---Geeta-Olympiad---Quiz-Branch.
+  This is a code bundle for Olympiad_GV_Fun. The original project is available at https://www.figma.com/design/P8jtWwoaws0j9dINytCeLH/Olympiad_GV_Fun.
 
   ## Running the code
 

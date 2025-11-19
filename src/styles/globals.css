@@ -41,28 +41,74 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Gita Olympiad Theme - Light Mode */
+  --gita-saffron: #D97706;
+  --gita-amber: #FBBF24;
+  --gita-amber-light: #FCD34D;
+  --gita-indigo: #1E3A8A;
+  --gita-indigo-light: #3B82F6;
+  --gita-cream: #FFF7E6;
+  --gita-cream-dark: #FEF3C7;
+  --gita-gold: #F59E0B;
+  
+  /* Portal Design System - LogiQids Inspired */
+  --portal-bg: #F8FAFC;
+  --portal-sidebar-bg: #FFFFFF;
+  --portal-card-bg: #FFFFFF;
+  
+  /* LogiQids Color Palette */
+  --logiqi-purple: #6366F1;
+  --logiqi-purple-light: #818CF8;
+  --logiqi-purple-dark: #4F46E5;
+  --logiqi-blue: #3B82F6;
+  --logiqi-blue-light: #60A5FA;
+  --logiqi-green: #10B981;
+  --logiqi-green-light: #34D399;
+  --logiqi-orange: #F97316;
+  --logiqi-orange-light: #FB923C;
+  --logiqi-pink: #EC4899;
+  --logiqi-pink-light: #F472B6;
+  --logiqi-yellow: #FBBF24;
+  --logiqi-red: #EF4444;
+  
+  /* Round Colors - LogiQids Style */
+  --round-1-from: #6366F1;
+  --round-1-to: #8B5CF6;
+  --round-2-from: #3B82F6;
+  --round-2-to: #06B6D4;
+  --round-3-from: #10B981;
+  --round-3-to: #14B8A6;
+  --round-4-from: #F97316;
+  --round-4-to: #FBBF24;
+  --round-5-from: #EC4899;
+  --round-5-to: #F472B6;
+  --round-6-from: #8B5CF6;
+  --round-6-to: #A855F7;
+  --round-7-from: #EF4444;
+  --round-7-to: #F97316;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --popover: #1E293B;
+  --popover-foreground: #F1F5F9;
+  --primary: #F1F5F9;
+  --primary-foreground: #0F172A;
+  --secondary: #334155;
+  --secondary-foreground: #F1F5F9;
+  --muted: #334155;
+  --muted-foreground: #94A3B8;
+  --accent: #334155;
+  --accent-foreground: #F1F5F9;
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --border: #334155;
+  --input: #334155;
+  --ring: #64748B;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -78,6 +124,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  
+  /* Gita Olympiad Theme - Dark Mode */
+  --gita-saffron: #F59E0B;
+  --gita-amber: #FBBF24;
+  --gita-amber-light: #FCD34D;
+  --gita-indigo: #60A5FA;
+  --gita-indigo-light: #93C5FD;
+  --gita-cream: #1E293B;
+  --gita-cream-dark: #334155;
+  --gita-gold: #FBBF24;
 }
 
 @theme inline {
@@ -128,7 +184,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Baloo 2', sans-serif;
+    font-family: 'Poppins', sans-serif;
   }
 }
 
@@ -191,34 +247,74 @@ html {
   font-size: var(--font-size);
 }
 
-@keyframes fadeInFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
+/* Mandala Pattern Background */
+.mandala-bg {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(217, 119, 6, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(30, 58, 138, 0.03) 0%, transparent 50%);
+  background-size: 400px 400px;
+  background-position: 0 0, 200px 200px;
+}
 
-  to {
-    opacity: 1;
-    transform: translateX(0);
+.dark .mandala-bg {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(96, 165, 250, 0.05) 0%, transparent 50%);
+}
+
+/* Glass-morphism effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* 3D Card Effect */
+.card-3d {
+  transform: translateZ(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dark .card-3d:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
   }
 }
 
-@keyframes fadeInFromRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }
 
-.animate-fade-in-left {
-  animation: fadeInFromLeft 0.7s ease-out forwards;
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.animate-fade-in-right {
-  animation: fadeInFromRight 0.7s ease-out forwards;
+.dark .gradient-text {
+  background: linear-gradient(135deg, #FBBF24 0%, #FCD34D 50%, #FDE68A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

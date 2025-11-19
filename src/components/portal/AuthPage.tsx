@@ -15,7 +15,7 @@ interface AuthPageProps {
 }
 
 export function AuthPage({ mode = 'login' }: AuthPageProps) {
-  const { sendOTP, login, loginWithPhone, loginAsAdmin, language } = useApp();
+  const { login, loginWithPhone, loginAsAdmin, language } = useApp();
   const t = useTranslation(language);
   const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
@@ -41,17 +41,39 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     setLoading(true);
     
     try {
-        let success = false;
-        let emailTO = email;
-        let phoneTO = phone;
-      
-        success = await sendOTP(emailTO, phoneTO);
-        if (success) {
-          toast.success('OTP sent!');
-          setStep('otp');
-        } else {
-          toast.error('Failed to send OTP. Please try again.');
-        } 
+      if (loginMethod === 'email') {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+          },
+        });
+
+        if (error) {
+          toast.error(error.message || 'Failed to send OTP');
+          setLoading(false);
+          return;
+        }
+
+        toast.success('OTP sent to your email!');
+        setStep('otp');
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone,
+          options: {
+            shouldCreateUser: true,
+          },
+        });
+
+        if (error) {
+          toast.error(error.message || 'Failed to send OTP');
+          setLoading(false);
+          return;
+        }
+
+        toast.success('OTP sent to your phone!');
+        setStep('otp');
+      }
     } catch (error) {
       console.error('Error sending OTP:', error);
       toast.error('Failed to send OTP. Please try again.');
@@ -84,11 +106,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     }
   };
 
-  const handleAdminLogin = async () => {
+  const handleAdminLogin = () => {
     setLoading(true);
     
     try {
-      const success = await loginAsAdmin(username, password);
+      const success = loginAsAdmin(username, password);
       
       if (success) {
         toast.success('Admin login successful!');
@@ -111,7 +133,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v:any) => setActiveTab(v as 'user' | 'admin')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'user' | 'admin')}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="user">User {mode === 'register' ? 'Registration' : 'Login'}</TabsTrigger>
           <TabsTrigger value="admin">Admin Login</TabsTrigger>
@@ -238,7 +260,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}

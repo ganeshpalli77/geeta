@@ -6,7 +6,7 @@ import treeBranch from 'figma:asset/4b035e5a54e0630a8e20bbfcdcc5ad1fef238061.png
 
 export function SwamijiMessage() {
   return (
-    <section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-8 md:py-0 relative">
+    <section className="w-full px-4 sm:px-8 md:px-12 lg:px-20 py-8 md:py-16 relative">
       {/* Decorative tree branch elements - hidden on mobile */}
       <div className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 scale-x-[-1]">
         <img
@@ -23,33 +23,33 @@ export function SwamijiMessage() {
         />
       </div>
       
-      <div className="flex flex-col md:flex-row lg:flex-row items-center gap-6 md:gap-12 max-w-7xl mx-auto">
+      <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-12 max-w-7xl mx-auto">
         {/* Left - Swamiji Photo */}
-        <div className="w-full sm:w-1/3 md:w-1/3 lg:w-1/3 relative mx-auto lg:-mx-10 animate-fade-in-left">
+        <div className="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 relative">
           {/* Background Circle */}
           <img
             src={gurujiBackground}
             alt=""
-            className="absolute ml-[70px] md:ml-0 -top-8 md:-top-12 left-4 md:left-2 lg:w-[90%] md:w-[90%] object-contain z-0"
+            className="absolute -top-8 md:-top-12 left-4 md:left-8 w-[85%] h-[85%] object-contain z-0"
           />
           {/* Swamiji Photo */}
           <img
             src={swamijiImage}
             alt="Swamiji"
-            className="lg:w-[90%] md:w-[90%] relative z-10"
+            className="w-full rounded-2xl shadow-lg relative z-10"
           />
         </div>
         
         {/* Right - Message */}
-        <div className="bg-[#8c2911] animate-fade-in-right md:rounded-r-[80px] md:rounded-b-none lg:rounded-r-[80px] lg:rounded-b-none lg:-ml-50 md:-ml-50 px-8 py-15">
-          <div className="lg:ml-50 md:ml-50">
-            <p className="text-2xl sm:text-base md:text-lg lg:text-xl text-white leading-relaxed">
-              भारतीय संस्कृति का समग्र ज्ञान भगवद्गीता में समाहित है। वेदों का विस्तार है उपनिषद और भगवद्गीता उपनिषदों का सार है। योगेश्वर श्रीकृष्ण द्वारा की गई योगशास्त्र की शोभायमान और सुंदर अभिव्यक्ति है भगवद्गीता।
-            </p>
-            <p className="text-base sm:text-base md:text-lg text-[#ffe0a7] md:pt-10 lg:pt-10">
-              परम पूज्य स्वामी गोविंददेवगिरि महाराज
-            </p>
-          </div>
+        <div 
+          className="w-full lg:w-2/3 space-y-3 md:space-y-4 p-6 md:p-8 bg-[#D55328] rounded-2xl"
+        >
+          <p className="text-sm sm:text-base md:text-lg text-white leading-relaxed" style={{ fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
+            श्रीमद्भगवद्गीता एक ऐसा अमृत ग्रन्थ है जो हमें जीवन के हर पहलू में मार्गदर्शन देता है। यह ओलंपियाड एक अनूठा अवसर है युवाओं और बच्चों के लिए गीता के ज्ञान को समझने और अपने जीवन में उतारने का। मैं सभी प्रतिभागियों को आशीर्वाद देता हूं कि वे इस पवित्र ज्ञान यात्रा में पूर्ण समर्पण और उत्साह के साथ भाग लें। गीता का ज्ञान ही हमें आत्मबल प्रदान करता है और जीवन की हर चुनौती का सामना करने की शक्ति देता है।
+          </p>
+          <p className="text-xs sm:text-sm text-white italic">
+            — परम पूज्य स्वामी जी
+          </p>
         </div>
       </div>
     </section>

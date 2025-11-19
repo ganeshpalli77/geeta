@@ -306,7 +306,7 @@ export function QuizPage() {
             <Trophy className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 text-[#E8C56E]" />
             <h2 className="text-2xl md:text-3xl text-[#822A12] mb-2">{t('quizResults')}</h2>
             <p className="text-sm md:text-base text-[#193C77]">
-              {selectedQuiz === 'mock' ? 'Great practice! Mock quiz scores don\'t count toward your total.' : 'Great job completing the quiz!'}
+              {selectedQuiz === 'mock' ? 'Great practice! Practice quiz scores don\'t count toward your total.' : 'Great job completing the quiz!'}
             </p>
           </div>
 

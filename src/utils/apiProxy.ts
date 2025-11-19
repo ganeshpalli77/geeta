@@ -1,11 +1,13 @@
 // API Proxy - Single interface for all backend calls
-// Switch between mock (localStorage) and real API by changing USE_MOCK_API flag
+// Switch between mock and Supabase auth by changing AUTH_MODE in utils/config.ts
 
 import { mockDb } from './mockDb';
+import { authHelpers } from './supabaseClient';
+import { AUTH_MODE, API_BASE_URL, isMockMode, isSupabaseMode, ADMIN_CREDENTIALS } from './config';
 
-// Configuration
-const USE_MOCK_API = false; // Set to false to use real backend API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Derived configuration flags
+const USE_MOCK_API = isMockMode();
+const USE_SUPABASE_AUTH = isSupabaseMode();
 
 // Types
 export interface User {
@@ -13,6 +15,7 @@ export interface User {
   email?: string;
   phone?: string;
   profiles: string[]; // Array of profile IDs
+  supabaseId?: string; // Supabase Auth user ID
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,10 +24,10 @@ export interface Profile {
   _id: string;
   userId: string;
   name: string;
-  prn?: string;
+  prn: string;
   dob: string;
   preferredLanguage: string;
-  category: string; // Based on age
+  category?: string; // Can be any string (school name, age group, etc.)
   createdAt?: string;
   updatedAt?: string;
 }
@@ -85,8 +88,15 @@ export interface LeaderboardEntry {
 }
 
 // Helper function to make real API calls
-async function apiCall<T>(endpoint: string, method: string = 'GET', data?: any): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+async function apiCall<T>(endpoint: string, method: string = 'GET', data?: any, language?: string): Promise<T> {
+  const url = new URL(`${API_BASE_URL}${endpoint}`);
+  
+  // Add language parameter to all requests
+  if (language) {
+    url.searchParams.append('language', language);
+  }
+  
+  const response = await fetch(url.toString(), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -106,13 +116,30 @@ async function apiCall<T>(endpoint: string, method: string = 'GET', data?: any):
 // ============================================================================
 
 export const authAPI = {
-  // Send OTP (mock always returns success)
+  // Send OTP (supports both mock and Supabase)
   sendOTP: async (email?: string, phone?: string): Promise<{ success: boolean }> => {
     if (USE_MOCK_API) {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
       return { success: true };
     }
+    
+    if (USE_SUPABASE_AUTH) {
+      try {
+        if (phone) {
+          await authHelpers.sendPhoneOTP(phone);
+        } else if (email) {
+          await authHelpers.sendEmailOTP(email);
+        } else {
+          throw new Error('Email or phone required');
+        }
+        return { success: true };
+      } catch (error: any) {
+        console.error('Supabase OTP send error:', error);
+        throw error;
+      }
+    }
+    
     return apiCall('/auth/send-otp', 'POST', { email, phone });
   },
 
@@ -135,7 +162,7 @@ export const authAPI = {
 
       if (!user) {
         // Create new user
-        const userData = type === 'email'
+        const userData = type === 'email' 
           ? { email: identifier, profiles: [] }
           : { phone: identifier, profiles: [] };
         user = mockDb.insertOne('users', userData) as User;
@@ -143,19 +170,55 @@ export const authAPI = {
 
       return { success: true, user, isNewUser };
     }
+    
+    if (USE_SUPABASE_AUTH) {
+      try {
+        const { session, user: supabaseUser } = await authHelpers.verifyOTP(identifier, otp, type);
+        
+        if (!session || !supabaseUser) {
+          throw new Error('Invalid OTP');
+        }
+
+        // Check if user exists in our database
+        const filter = type === 'email' ? { email: identifier } : { phone: identifier };
+        let user = mockDb.findOne('users', filter) as User | null;
+        const isNewUser = !user;
+
+        if (!user) {
+          // Create new user in our database
+          const userData = type === 'email' 
+            ? { email: identifier, profiles: [], supabaseId: supabaseUser.id }
+            : { phone: identifier, profiles: [], supabaseId: supabaseUser.id };
+          user = mockDb.insertOne('users', userData) as User;
+        }
+
+        return { success: true, user, isNewUser };
+      } catch (error: any) {
+        console.error('Supabase OTP verification error:', error);
+        throw error;
+      }
+    }
+    
     return apiCall('/auth/verify-otp', 'POST', { identifier, otp, type });
   },
 
   // Admin login
   adminLogin: async (username: string, password: string): Promise<{ success: boolean }> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       await new Promise(resolve => setTimeout(resolve, 500));
-      if (username === 'admin' && password === 'admin123') {
+      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
         return { success: true };
       }
       throw new Error('Invalid credentials');
     }
     return apiCall('/auth/admin-login', 'POST', { username, password });
+  },
+
+  // Sign out (Supabase)
+  signOut: async (): Promise<void> => {
+    if (USE_SUPABASE_AUTH) {
+      await authHelpers.signOut();
+    }
   },
 };
 
@@ -166,7 +229,7 @@ export const authAPI = {
 export const userAPI = {
   // Get user by ID
   getUser: async (userId: string): Promise<User> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       const user = mockDb.findById('users', userId) as User | null;
       if (!user) throw new Error('User not found');
       return user;
@@ -176,7 +239,7 @@ export const userAPI = {
 
   // Update user
   updateUser: async (userId: string, updates: Partial<User>): Promise<User> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       mockDb.updateById('users', userId, { $set: updates });
       return mockDb.findById('users', userId) as User;
     }
@@ -191,14 +254,16 @@ export const userAPI = {
 export const profileAPI = {
   // Create profile
   createProfile: async (profileData: Omit<Profile, '_id' | 'createdAt' | 'updatedAt'>): Promise<Profile> => {
-    if (USE_MOCK_API) {
-      // Determine category based on age
-      const dob = new Date(profileData.dob);
-      const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      let category: 'kids' | 'youth' | 'senior';
-      if (age <= 19) category = 'kids';
-      else if (age <= 40) category = 'youth';
-      else category = 'senior';
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // If category not provided, determine based on age
+      let category = profileData.category;
+      if (!category) {
+        const dob = new Date(profileData.dob);
+        const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        if (age <= 19) category = 'kids';
+        else if (age <= 40) category = 'youth';
+        else category = 'senior';
+      }
 
       const profile = mockDb.insertOne('profiles', { ...profileData, category }) as Profile;
 
@@ -214,7 +279,7 @@ export const profileAPI = {
 
   // Get profiles by user ID
   getProfilesByUser: async (userId: string): Promise<Profile[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('profiles', { userId }) as Profile[];
     }
     return apiCall(`/profiles/user/${userId}`, 'GET');
@@ -222,7 +287,7 @@ export const profileAPI = {
 
   // Get profile by ID
   getProfile: async (profileId: string): Promise<Profile> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       const profile = mockDb.findById('profiles', profileId) as Profile | null;
       if (!profile) throw new Error('Profile not found');
       return profile;
@@ -232,7 +297,7 @@ export const profileAPI = {
 
   // Update profile
   updateProfile: async (profileId: string, updates: Partial<Profile>): Promise<Profile> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       mockDb.updateById('profiles', profileId, { $set: updates });
       return mockDb.findById('profiles', profileId) as Profile;
     }
@@ -241,7 +306,7 @@ export const profileAPI = {
 
   // Delete profile
   deleteProfile: async (profileId: string): Promise<void> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       // Remove profile
       mockDb.deleteById('profiles', profileId);
       // Remove from user's profiles array
@@ -266,7 +331,7 @@ export const profileAPI = {
 export const quizAPI = {
   // Submit quiz attempt
   submitQuiz: async (attemptData: Omit<QuizAttempt, '_id'>): Promise<QuizAttempt> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.insertOne('quizAttempts', attemptData) as QuizAttempt;
     }
     return apiCall('/quiz/submit', 'POST', attemptData);
@@ -274,7 +339,7 @@ export const quizAPI = {
 
   // Get quiz attempts by profile
   getAttemptsByProfile: async (profileId: string): Promise<QuizAttempt[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('quizAttempts', { profileId }) as QuizAttempt[];
     }
     return apiCall(`/quiz/attempts/profile/${profileId}`, 'GET');
@@ -282,7 +347,7 @@ export const quizAPI = {
 
   // Get all quiz attempts (admin)
   getAllAttempts: async (): Promise<QuizAttempt[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('quizAttempts', {}) as QuizAttempt[];
     }
     return apiCall('/quiz/attempts', 'GET');
@@ -296,7 +361,7 @@ export const quizAPI = {
 export const eventAPI = {
   // Submit video
   submitVideo: async (submissionData: Omit<VideoSubmission, '_id' | 'status' | 'submittedAt'>): Promise<VideoSubmission> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.insertOne('videoSubmissions', {
         ...submissionData,
         status: 'pending',
@@ -308,7 +373,7 @@ export const eventAPI = {
 
   // Get video submissions by profile
   getVideosByProfile: async (profileId: string): Promise<VideoSubmission[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('videoSubmissions', { profileId }) as VideoSubmission[];
     }
     return apiCall(`/events/videos/profile/${profileId}`, 'GET');
@@ -316,7 +381,7 @@ export const eventAPI = {
 
   // Submit slogan
   submitSlogan: async (profileId: string, slogan: string): Promise<SloganSubmission> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.insertOne('sloganSubmissions', {
         profileId,
         slogan,
@@ -329,7 +394,7 @@ export const eventAPI = {
 
   // Get slogan submissions by profile
   getSlogansByProfile: async (profileId: string): Promise<SloganSubmission[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('sloganSubmissions', { profileId }) as SloganSubmission[];
     }
     return apiCall(`/events/slogans/profile/${profileId}`, 'GET');
@@ -337,7 +402,7 @@ export const eventAPI = {
 
   // Get all video submissions (admin)
   getAllVideos: async (): Promise<VideoSubmission[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('videoSubmissions', {}) as VideoSubmission[];
     }
     return apiCall('/events/videos', 'GET');
@@ -345,7 +410,7 @@ export const eventAPI = {
 
   // Get all slogan submissions (admin)
   getAllSlogans: async (): Promise<SloganSubmission[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('sloganSubmissions', {}) as SloganSubmission[];
     }
     return apiCall('/events/slogans', 'GET');
@@ -357,7 +422,7 @@ export const eventAPI = {
     status: 'approved' | 'rejected',
     creditScore?: number
   ): Promise<VideoSubmission> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       mockDb.updateById('videoSubmissions', submissionId, {
         $set: {
           status,
@@ -376,7 +441,7 @@ export const eventAPI = {
     status: 'approved' | 'rejected',
     creditScore?: number
   ): Promise<SloganSubmission> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       mockDb.updateById('sloganSubmissions', submissionId, {
         $set: {
           status,
@@ -397,10 +462,10 @@ export const eventAPI = {
 export const imagePuzzleAPI = {
   // Collect today's image part
   collectPart: async (profileId: string): Promise<{ success: boolean; partNumber: number }> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       const today = new Date().toDateString();
       const lastCollected = localStorage.getItem('lastImagePartCollected');
-
+      
       if (lastCollected === today) {
         throw new Error('Already collected today');
       }
@@ -435,7 +500,7 @@ export const imagePuzzleAPI = {
 
   // Get collected parts by profile
   getCollectedParts: async (profileId: string): Promise<ImagePart[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('imageParts', { profileId }) as ImagePart[];
     }
     return apiCall(`/puzzle/parts/${profileId}`, 'GET');
@@ -449,7 +514,7 @@ export const imagePuzzleAPI = {
 export const leaderboardAPI = {
   // Get leaderboard (overall or weekly)
   getLeaderboard: async (type: 'overall' | 'weekly' = 'overall'): Promise<LeaderboardEntry[]> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       // Calculate scores for all profiles
       const profiles = mockDb.find('profiles', {}) as Profile[];
       const entries: LeaderboardEntry[] = [];
@@ -460,15 +525,15 @@ export const leaderboardAPI = {
         const quizScore = quizAttempts.reduce((sum, a) => sum + a.score, 0);
 
         // Event score
-        const videos = mockDb.find('videoSubmissions', {
-          profileId: profile._id,
-          status: 'approved'
+        const videos = mockDb.find('videoSubmissions', { 
+          profileId: profile._id, 
+          status: 'approved' 
         }) as VideoSubmission[];
-        const slogans = mockDb.find('sloganSubmissions', {
+        const slogans = mockDb.find('sloganSubmissions', { 
           profileId: profile._id,
-          status: 'approved'
+          status: 'approved' 
         }) as SloganSubmission[];
-
+        
         const videoScore = videos.reduce((sum, v) => sum + (v.creditScore || 0), 0);
         const sloganScore = slogans.reduce((sum, s) => sum + (s.creditScore || 0), 0);
 
@@ -487,7 +552,7 @@ export const leaderboardAPI = {
         entries.push({
           profileId: profile._id,
           name: profile.name,
-          category: profile.category,
+          category: profile.category || 'General',
           totalScore,
           quizScore,
           eventScore,
@@ -512,7 +577,7 @@ export const leaderboardAPI = {
 
   // Get profile rank
   getProfileRank: async (profileId: string): Promise<{ rank: number; totalParticipants: number }> => {
-    if (USE_MOCK_API) {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       const leaderboard = await leaderboardAPI.getLeaderboard('overall');
       const entry = leaderboard.find(e => e.profileId === profileId);
       return {

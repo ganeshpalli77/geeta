@@ -1,12 +1,12 @@
 import React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import {
-  authAPI,
-  userAPI,
-  profileAPI,
-  quizAPI,
-  eventAPI,
-  imagePuzzleAPI,
+import { 
+  authAPI, 
+  userAPI, 
+  profileAPI, 
+  quizAPI, 
+  eventAPI, 
+  imagePuzzleAPI, 
   leaderboardAPI,
   type User as ApiUser,
   type Profile as ApiProfile,
@@ -19,12 +19,13 @@ import {
 import { initializeMockData } from '../utils/initMockData';
 import { supabase } from '../utils/supabaseClient';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner@2.0.3';
 
 // Types (keeping backward compatibility with existing components)
 export interface UserProfile {
   id: string;
   name: string;
-  prn?: string;
+  prn: string;
   dob: string;
   preferredLanguage: string;
   category?: string;
@@ -89,16 +90,6 @@ export interface ImagePart {
   collectedDate?: string;
 }
 
-export interface FeatureFlags {
-  dashboard: boolean;
-  quiz: boolean;
-  events: boolean;
-  leaderboard: boolean;
-  imagePuzzle: boolean;
-  videoSubmission: boolean;
-  sloganSubmission: boolean;
-}
-
 export interface AppState {
   user: User | null;
   currentProfile: UserProfile | null;
@@ -112,7 +103,6 @@ export interface AppState {
   leaderboard: ApiLeaderboardEntry[];
   quizInProgress: boolean;
   devMode: boolean;
-  featureFlags: FeatureFlags;
 }
 
 export interface LeaderboardEntry {
@@ -126,7 +116,6 @@ export interface LeaderboardEntry {
 }
 
 interface AppContextType extends AppState {
-  sendOTP: (email?: string, phone?: string) => Promise<boolean>;
   login: (email: string, otp: string) => Promise<boolean>;
   loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
   logout: () => void;
@@ -138,18 +127,17 @@ interface AppContextType extends AppState {
   submitVideo: (submission: Omit<VideoSubmission, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
   submitSlogan: (slogan: string) => Promise<void>;
   collectImagePart: () => Promise<boolean>;
-  getAvailableQuizzes: () => {
-    mock: { available: boolean; reason?: string };
-    quiz1: { available: boolean; reason?: string };
-    quiz2: { available: boolean; reason?: string };
-    quiz3: { available: boolean; reason?: string };
+  getAvailableQuizzes: () => { 
+    mock: { available: boolean; reason?: string }; 
+    quiz1: { available: boolean; reason?: string }; 
+    quiz2: { available: boolean; reason?: string }; 
+    quiz3: { available: boolean; reason?: string }; 
   };
   getTotalScore: () => number;
   loginAsAdmin: (username: string, password: string) => Promise<boolean>;
   refreshLeaderboard: () => Promise<void>;
   setQuizInProgress: (inProgress: boolean) => void;
   toggleDevMode: () => void;
-  toggleFeatureFlag: (feature: keyof FeatureFlags) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -188,20 +176,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const stored = sessionStorage.getItem('geetaOlympiadSession');
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Ensure devMode and featureFlags exist for backwards compatibility
-      return { 
-        ...parsed, 
-        devMode: parsed.devMode ?? false,
-        featureFlags: parsed.featureFlags ?? {
-          dashboard: true,
-          quiz: true,
-          events: true,
-          leaderboard: true,
-          imagePuzzle: true,
-          videoSubmission: true,
-          sloganSubmission: true,
-        },
-      };
+      // Ensure devMode exists for backwards compatibility
+      return { ...parsed, devMode: parsed.devMode ?? false };
     }
     return {
       user: null,
@@ -216,139 +192,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       leaderboard: [],
       quizInProgress: false,
       devMode: false,
-      featureFlags: {
-        dashboard: true,
-        quiz: true,
-        events: true,
-        leaderboard: true,
-        imagePuzzle: true,
-        videoSubmission: true,
-        sloganSubmission: true,
-      },
     };
   });
-
-  // Save to sessionStorage whenever state changes
-  useEffect(() => {
-    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
-  }, [state]);
-
-  const sendOTP = async (email?: string, phone?: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.sendOTP(email, phone);
-      console.log(result);
-      if (result.success) {
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // Only log unexpected errors (not validation errors)
-      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
-        console.error('Login error:', error);
-      }
-      return false;
-    }
-  };
-
-  const login = async (email: string, otp: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.verifyOTP(email, otp, 'email');
-
-      if (result.success) {
-        // Get user's profiles
-        const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        // const profiles = await profileAPI.getProfilesByUser("0");
-        const user = convertApiUserToUser(result.user, profiles);
-
-        setState(prev => ({
-          ...prev,
-          user,
-          isAuthenticated: true,
-          isAdmin: false,
-        }));
-
-        // If user has profiles, load the first one
-        if (profiles.length > 0) {
-          await loadProfileData(profiles[0]._id);
-        }
-
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // Only log unexpected errors (not validation errors)
-      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
-        console.error('Login error:', error);
-      }
-      return false;
-    }
-  };
-
-  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.verifyOTP(phone, otp, 'phone');
-
-      if (result.success) {
-        const profiles = await profileAPI.getProfilesByUser(result.user._id);
-        // const profiles = await profileAPI.getProfilesByUser("0");
-        const user = convertApiUserToUser(result.user, profiles);
-
-        setState(prev => ({
-          ...prev,
-          user,
-          isAuthenticated: true,
-          isAdmin: false,
-        }));
-
-        if (profiles.length > 0) {
-          await loadProfileData(profiles[0]._id);
-        }
-
-        return true;
-      }
-      return false;
-    } catch (error) {
-      // Only log unexpected errors (not validation errors)
-      if (error instanceof Error && !error.message.includes('Invalid OTP')) {
-        console.error('Login error:', error);
-      }
-      return false;
-    }
-  };
-
-  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const result = await authAPI.adminLogin(username, password);
-
-      if (result.success) {
-        setState(prev => ({
-          ...prev,
-          isAuthenticated: true,
-          isAdmin: true,
-        }));
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Admin login error:', error);
-      return false;
-    }
-  };
-
-  const logout = () => {
-    setState(prev => ({
-      ...prev,
-      user: null,
-      currentProfile: null,
-      isAuthenticated: false,
-      isAdmin: false,
-      quizAttempts: [],
-      videoSubmissions: [],
-      sloganSubmissions: [],
-      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
-    }));
-    sessionStorage.removeItem('geetaOlympiadSession');
-  };
 
   const loadProfileData = async (profileId: string) => {
     try {
@@ -385,7 +230,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /*
   // Check Supabase auth state on mount and on auth changes
   useEffect(() => {
     // Check initial session
@@ -473,7 +317,146 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }));
     }
   };
-*/
+
+  // Save to sessionStorage whenever state changes
+  useEffect(() => {
+    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
+  }, [state]);
+
+  const login = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      // Check if Supabase is configured
+      const { data: { publicUrl } } = await supabase.storage.from('test').getPublicUrl('test');
+      const isSupabaseConfigured = publicUrl && !publicUrl.includes('undefined');
+
+      if (!isSupabaseConfigured) {
+        // Fallback to mock login if Supabase is not configured
+        console.log('Supabase not configured, using mock login');
+        
+        // Mock user creation
+        const mockUserId = `user-${Date.now()}`;
+        const mockUser: User = {
+          id: mockUserId,
+          email,
+          profiles: [],
+        };
+
+        setState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          user: mockUser,
+        }));
+
+        return true;
+      }
+
+      // Verify OTP with Supabase - use 'magiclink' type for email
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'magiclink',
+      });
+
+      if (error) {
+        console.error('Supabase OTP verification error:', error);
+        // If error is token expired, provide helpful message
+        if (error.message?.includes('expired') || error.message?.includes('invalid')) {
+          toast.error('OTP has expired. Please request a new one.');
+        }
+        return false;
+      }
+
+      if (data.user && data.session) {
+        // Auth state change will be handled by onAuthStateChange listener
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      // Fallback to mock login on error
+      const mockUserId = `user-${Date.now()}`;
+      const mockUser: User = {
+        id: mockUserId,
+        email,
+        profiles: [],
+      };
+
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        user: mockUser,
+      }));
+
+      return true;
+    }
+  };
+
+  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
+    try {
+      // Verify OTP with Supabase
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (error) {
+        console.error('Supabase OTP verification error:', error);
+        return false;
+      }
+
+      if (data.user && data.session) {
+        // Auth state change will be handled by onAuthStateChange listener
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const loginAsAdmin = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const result = await authAPI.adminLogin(username, password);
+      
+      if (result.success) {
+        setState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          isAdmin: true,
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    setState(prev => ({
+      ...prev,
+      user: null,
+      currentProfile: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      quizAttempts: [],
+      videoSubmissions: [],
+      sloganSubmissions: [],
+      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
+    }));
+    sessionStorage.removeItem('geetaOlympiadSession');
+  };
 
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
     if (!state.user) return;
@@ -496,14 +479,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newProfile = await profileAPI.createProfile({
         userId: state.user.id,
         name: profileData.name,
-        prn: profileData.prn?.trim() || undefined,
+        prn: profileData.prn,
         dob: profileData.dob,
         preferredLanguage: profileData.preferredLanguage,
-        category: 'kids'
       });
 
       const profiles = await profileAPI.getProfilesByUser(state.user.id);
-
+      
       setState(prev => ({
         ...prev,
         user: prev.user ? {
@@ -533,13 +515,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (profileId: string, updates: Partial<UserProfile>) => {
     try {
-      // Normalize empty PRN strings to undefined
-      const normalizedUpdates = {
-        ...updates,
-        prn: updates.prn?.trim() || undefined,
-      };
-      await profileAPI.updateProfile(profileId, normalizedUpdates);
-
+      await profileAPI.updateProfile(profileId, updates);
+      
       // Reload profile data
       if (state.currentProfile?.id === profileId) {
         await loadProfileData(profileId);
@@ -624,7 +601,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await imagePuzzleAPI.collectPart(state.currentProfile.id);
-
+      
       if (result.success) {
         setState(prev => ({
           ...prev,
@@ -648,7 +625,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const getAvailableQuizzes = () => {
     if (!state.currentProfile) {
-      return {
+      return { 
         mock: { available: false, reason: 'No profile selected' },
         quiz1: { available: false, reason: 'No profile selected' },
         quiz2: { available: false, reason: 'No profile selected' },
@@ -684,17 +661,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Production mode rules
     return {
       mock: { available: !mockAttempted },
-      quiz1: {
+      quiz1: { 
         available: !quiz1Attempted && mockAttempted,
         reason: !mockAttempted ? 'Complete mock quiz first' : quiz1Attempted ? 'Already attempted' : undefined
       },
-      quiz2: {
+      quiz2: { 
         available: !quiz2Attempted && mockAttempted && today >= quiz2UnlockDate,
-        reason: !mockAttempted ? 'Complete mock quiz first' :
+        reason: !mockAttempted ? 'Complete mock quiz first' : 
                 today < quiz2UnlockDate ? 'Available from Dec 1, 2025' :
                 quiz2Attempted ? 'Already attempted' : undefined
       },
-      quiz3: {
+      quiz3: { 
         available: !quiz3Attempted && mockAttempted && today >= quiz3UnlockDate,
         reason: !mockAttempted ? 'Complete mock quiz first' :
                 today < quiz3UnlockDate ? 'Available from Dec 15, 2025' :
@@ -742,19 +719,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, devMode: !prev.devMode }));
   };
 
-  const toggleFeatureFlag = (feature: keyof FeatureFlags) => {
-    setState(prev => ({
-      ...prev,
-      featureFlags: {
-        ...prev.featureFlags,
-        [feature]: !prev.featureFlags[feature],
-      },
-    }));
-  };
-
   const value: AppContextType = {
     ...state,
-    sendOTP,
     login,
     loginWithPhone,
     logout,
@@ -772,7 +738,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshLeaderboard,
     setQuizInProgress,
     toggleDevMode,
-    toggleFeatureFlag,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

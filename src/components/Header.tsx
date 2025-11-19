@@ -48,16 +48,9 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
   const appContext = isPortalMode ? useApp() : null;
   const { logout, changeLanguage, language, currentProfile, isAdmin, quizInProgress, isAuthenticated } = appContext || {};
   const t = isPortalMode && language ? useTranslation(language) : null;
-  const featureFlags = appContext?.featureFlags;
 
-  // Portal navigation items - respects feature flags
-  const allNavItems = [
-    { id: 'dashboard', label: t?.('dashboard') || 'Dashboard', icon: LayoutDashboard, flag: 'dashboard' },
-    { id: 'quiz', label: t?.('quiz') || 'Quiz', icon: BookOpen, flag: 'quiz' },
-    { id: 'events', label: t?.('events') || 'Events', icon: Sparkles, flag: 'events' },
-    { id: 'leaderboard', label: t?.('leaderboard') || 'Leaderboard', icon: Trophy, flag: 'leaderboard' },
-  ];
-
+  // Portal navigation items
+  // Disable dashboard, quiz, events, leaderboard for logged-in users
   const navItems = isPortalMode && isAdmin
     ? [
         { id: 'admin', label: t?.('admin') || 'Admin', icon: Shield },
@@ -65,8 +58,8 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
       ]
     : isPortalMode && isAuthenticated
     ? [
+        // Only show Home for logged-in users - dashboard, quiz, events, leaderboard are disabled
         { id: 'home', label: t?.('home') || 'Home', icon: Home },
-        ...allNavItems.filter(item => featureFlags?.[item.flag as keyof typeof featureFlags] !== false),
       ]
     : [];
 
@@ -110,9 +103,9 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {language && changeLanguage && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold">
+                    <Button variant="ghost" size="sm" className="text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]">
                       <Globe className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">{language === 'en' ? 'EN' : 'हिं'}</span>
+                      <span className="hidden sm:inline">{language === 'en' ? 'EN' : '‡§π‡§ø‡§Ç'}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-white">
@@ -120,7 +113,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                       English
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => changeLanguage('hi')}>
-                      हिंदी
+                      ‡§π‡§ø‡§Ç‡§¶‡•Ä
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -130,7 +123,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {!isAdmin && currentProfile && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hidden sm:flex text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold">
+                    <Button variant="ghost" size="sm" className="hidden sm:flex text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]">
                       <User className="w-4 h-4 mr-2" />
                       {currentProfile.name}
                     </Button>
@@ -156,7 +149,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="hidden sm:flex text-[#B54520] hover:bg-[#B54520] hover:text-white rounded-[25px] font-bold"
+                  className="hidden sm:flex text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px]"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   {t?.('logout') || 'Logout'}
@@ -166,68 +159,15 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
               {/* Hamburger Menu with Sheet */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <button className="p-2 hover:bg-[#B54520] rounded-lg transition-colors font-bold">
-                    <Menu className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-[#B54520] hover:text-white" />
+                  <button className="p-2 hover:bg-[#D55328] rounded-lg transition-colors">
+                    <Menu className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-[#D55328] hover:text-white" />
                   </button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white border-l-2">
                   <SheetHeader>
-                  <SheetTitle className="text-left text-[#B54520] font-bold">Menu</SheetTitle>
+                    <SheetTitle className="text-left text-[#D55328]">Menu</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col gap-2 mt-6">
-                    {/* Mobile Profile Section - TOP (for non-admin) */}
-                    {!isAdmin && currentProfile && (
-                      <>
-                        {/* Profile Card */}
-                        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-[15px] p-4 mb-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="bg-[#B54520] rounded-full p-2">
-                              <User className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm text-gray-600">Logged in as</p>
-                              <p className="font-bold text-[#193C77]">{currentProfile.name}</p>
-                            </div>
-                          </div>
-                          {currentProfile.dob && (
-                            <p className="text-xs text-gray-600 ml-11">DOB: {currentProfile.dob}</p>
-                          )}
-                        </div>
-
-                        {/* Profile Actions */}
-                        <button
-                          onClick={() => handleNavClick('profile')}
-                          disabled={quizInProgress && currentPage === 'quiz'}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-[25px] transition-colors text-left font-bold mb-2 ${
-                            currentPage === 'profile'
-                              ? 'bg-[#B54520] text-white'
-                              : quizInProgress && currentPage === 'quiz'
-                              ? 'text-gray-400 cursor-not-allowed opacity-50'
-                              : 'text-[#B54520] hover:bg-orange-100'
-                          }`}
-                        >
-                          <User className="w-5 h-5" />
-                          <span>{t?.('profile') || 'Edit Profile'}</span>
-                        </button>
-
-                        {/* Logout */}
-                        {logout && (
-                          <button
-                            onClick={() => {
-                              logout();
-                              setMobileMenuOpen(false);
-                            }}
-                            className="flex items-center gap-3 px-4 py-3 rounded-[25px] text-[#B54520] hover:bg-orange-100 transition-colors text-left font-bold w-full mb-4"
-                          >
-                            <LogOut className="w-5 h-5" />
-                            <span>{t?.('logout') || 'Logout'}</span>
-                          </button>
-                        )}
-
-                        <div className="border-t border-gray-300 my-4"></div>
-                      </>
-                    )}
-
                     {/* Navigation Items */}
                     {navItems.map((item) => (
                       <button
@@ -236,16 +176,49 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
                         disabled={quizInProgress && currentPage === 'quiz' && item.id !== 'quiz'}
                         className={`flex items-center gap-3 px-4 py-3 rounded-[25px] transition-colors text-left ${
                           currentPage === item.id
-                            ? 'bg-[#B54520] text-white'
+                            ? 'bg-[#D55328] text-white'
                             : quizInProgress && currentPage === 'quiz' && item.id !== 'quiz'
                             ? 'text-gray-400 cursor-not-allowed opacity-50'
-                            : 'text-[#B54520] hover:bg-orange-100'
+                            : 'text-gray-700 hover:bg-[#D55328] hover:text-white'
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
-                        <span className="font-bold">{item.label}</span>
+                        <span>{item.label}</span>
                       </button>
                     ))}
+
+                    {/* Mobile Profile (for non-admin) */}
+                    {!isAdmin && currentProfile && (
+                      <>
+                        <div className="border-t border-gray-300 my-4"></div>
+                        <button
+                          onClick={() => handleNavClick('profile')}
+                          disabled={quizInProgress && currentPage === 'quiz'}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-[25px] transition-colors text-left sm:hidden ${
+                            quizInProgress && currentPage === 'quiz'
+                              ? 'text-gray-400 cursor-not-allowed opacity-50'
+                              : 'text-gray-700 hover:bg-[#D55328] hover:text-white'
+                          }`}
+                        >
+                          <User className="w-5 h-5" />
+                          <span>{t?.('profile') || 'Profile'}</span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* Logout */}
+                    {logout && (
+                      <button
+                        onClick={() => {
+                          logout();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 rounded-[25px] text-gray-700 hover:bg-[#D55328] hover:text-white transition-colors text-left sm:hidden"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span>{t?.('logout') || 'Logout'}</span>
+                      </button>
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -258,12 +231,12 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-[#B54520]" />
+                <AlertTriangle className="w-5 h-5 text-[#D55328]" />
                 Quiz in Progress
               </AlertDialogTitle>
               <AlertDialogDescription>
                 You have a quiz in progress. If you navigate away, your quiz progress will be lost and you won't be able to submit it.
-                <span className="block mt-2 text-[#B54520]">
+                <span className="block mt-2 text-[#D55328]">
                   Please finish and submit your quiz before navigating to other pages.
                 </span>
               </AlertDialogDescription>
@@ -300,17 +273,14 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
             <Button 
               variant="outline"
               onClick={() => onOpenAuth('login')}
-              className="sm:flex border-[#B54520] text-[#B54520] hover:bg-[#B54520] rounded-[25px] px-4 sm:px-6 font-bold"
+              className="hidden sm:flex border-[#D55328] text-[#D55328] hover:bg-[#D55328] hover:text-white rounded-[25px] px-4 lg:px-6"
             >
-              <LogIn className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Login</span>
+              <LogIn className="w-4 h-4 mr-2" />
+              Login
             </Button>
             <Button 
               onClick={() => onOpenAuth('register')}
-              className="bg-[#B54520] hover:bg-[#9C3B1B] text-white rounded-[25px] px-4 sm:px-6 font-bold"
-              style={{ color: '#FFFFFF', backgroundColor: '#B54520' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}
+              className="bg-[#D55328] hover:bg-[#C44820] rounded-[25px] px-4 sm:px-6"
             >
               <UserPlus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Register</span>
@@ -318,12 +288,7 @@ export function Header({ onOpenAuth, currentPage, onNavigate, isPortalMode = fal
           </>
         )}
         {!onOpenAuth && (
-          <Button 
-            className="bg-[#B54520] hover:bg-[#9C3B1B] text-white rounded-[25px] px-4 sm:px-6 font-bold"
-            style={{ color: '#FFFFFF', backgroundColor: '#B54520' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9C3B1B'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B54520'}
-          >
+          <Button className="bg-[#D55328] hover:bg-[#C44820] rounded-[25px] px-4 sm:px-6">
             Register
           </Button>
         )}

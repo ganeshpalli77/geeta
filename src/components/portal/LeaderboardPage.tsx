@@ -18,7 +18,7 @@ export function LeaderboardPage() {
     const scores: Array<{
       profileId: string;
       name: string;
-      prn?: string;
+      prn: string;
       totalScore: number;
       quizScore: number;
       eventScore: number;
@@ -182,7 +182,7 @@ export function LeaderboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-[#822A12] font-medium">{entry.name}</div>
-                        <div className="text-xs text-gray-600">{entry.prn || 'No PRN'}</div>
+                        <div className="text-xs text-gray-600">{entry.prn}</div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg text-[#D55328] font-medium">{entry.totalScore}</div>
@@ -276,7 +276,7 @@ export function LeaderboardPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm text-[#822A12] font-medium">{entry.name}</div>
-                          <div className="text-xs text-gray-600">{entry.prn || 'No PRN'}</div>
+                          <div className="text-xs text-gray-600">{entry.prn}</div>
                         </div>
                       </div>
                       <div className="flex md:hidden justify-around text-center text-sm">

@@ -21,63 +21,63 @@ export function HomePage({ onOpenAuth }: HomePageProps) {
   const { isAuthenticated } = useApp();
   
   return (
-    <div>
-      <div className="min-h-screen sm:w-full md:w-full lg:w-[1200px] mx-auto bg-white">
-        {/* Header */}
-        {/* <Header onOpenAuth={onOpenAuth} /> */}
-        
-        {/* Step 2: Hero Banner - Full Width */}
-        <HeroBanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
-        
-        {/* Main content with responsive spacing between sections */}
-        <main className="w-full">
-          <div className="py-8 sm:py-12 md:py-16 lg:py-20">
-            
-            {/* Step 3: Swamiji Message Section - Full Width */}
-            <div className="mb-8 sm:mb-12 md:mb-16 lg:mb-[60px]">
-              <SwamijiMessage />
-            </div>
-            
-            {/* Step 4: Three Feature Boxes */}
-            <FeatureBoxes />
-            
-            {/* Step 5: Engage Banner - Full Width (overlaps with feature boxes) */}
-            <EngageBanner />
-            
-            {/* Step 6: Celebrate-Participate-Connect Boxes */}
-            <CelebrationBoxes />
-            
-            {/* Step 7: Timeline Section - Full Width */}
-            <div className="mt-4 sm:mt-8 md:mt-8 lg:mt-8">
-              <Timeline />
-            </div>
-            
-            {/* Step 11: Closing CTA Banner - Full Width */}
-            <CTABanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
-            
-            {/* Step 8: Events & Rounds Section */}
-            <div className="mt-8 sm:mt-12 md:mt-16 lg:mt-[60px]">
-              <EventsRounds />
-            </div>
-            
-            {/* Step 9: Participant Categories */}
-            <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
-              <ParticipantCategories />
-            </div>
-            
-            {/* Tagline Section */}
-            <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-20">
-              <TaglineSection />
-            </div>
-            
-            {/* Step 10: Grand Finale & Prizes */}
-            <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
-              <GrandFinale />
-            </div>
+    <div className="min-h-screen w-full bg-white">
+      {/* Header */}
+      {/* <Header onOpenAuth={onOpenAuth} /> */}
+      
+      {/* Step 2: Hero Banner - Full Width */}
+      <HeroBanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
+      
+      {/* Main content with responsive spacing between sections */}
+      <main className="w-full">
+        <div className="py-8 sm:py-12 md:py-16 lg:py-20">
+          
+          {/* Step 3: Swamiji Message Section - Full Width */}
+          <div className="mb-12 sm:mb-16 md:mb-20 lg:mb-[120px]">
+            <SwamijiMessage />
           </div>
-        </main>
-        
-      </div>
+          
+          {/* Step 4: Three Feature Boxes */}
+          <FeatureBoxes />
+          
+          {/* Step 5: Engage Banner - Full Width (overlaps with feature boxes) */}
+          <EngageBanner />
+          
+          {/* Step 6: Celebrate-Participate-Connect Boxes */}
+          <CelebrationBoxes />
+          
+          {/* Step 7: Timeline Section - Full Width */}
+          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
+            <Timeline />
+          </div>
+          
+          {/* Step 11: Closing CTA Banner - Full Width */}
+          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
+            <CTABanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
+          </div>
+          
+          {/* Step 8: Events & Rounds Section */}
+          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
+            <EventsRounds />
+          </div>
+          
+          {/* Step 9: Participant Categories */}
+          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
+            <ParticipantCategories />
+          </div>
+          
+          {/* Tagline Section */}
+          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
+            <TaglineSection />
+          </div>
+          
+          {/* Step 10: Grand Finale & Prizes */}
+          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
+            <GrandFinale />
+          </div>
+        </div>
+      </main>
+      
       {/* Step 12: Footer - Full Width */}
       <Footer />
     </div>

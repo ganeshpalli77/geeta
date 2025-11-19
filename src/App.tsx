@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { Toaster } from './components/ui/sonner';
 import { AuthPage } from './components/portal/AuthPage';
 import { HomePage } from './components/portal/HomePage';
 import { Header } from './components/Header';
+import { PortalHeader } from './components/portal/PortalHeader';
 import { DashboardPage } from './components/portal/DashboardPage';
+import { NewDashboardPage } from './components/portal/NewDashboardPage';
 import { ProfilePage } from './components/portal/ProfilePage';
 import { QuizPage } from './components/portal/QuizPage';
+import { NewQuizPage } from './components/portal/NewQuizPage';
 import { EventsPage } from './components/portal/EventsPage';
 import { LeaderboardPage } from './components/portal/LeaderboardPage';
 import { AdminPanel } from './components/portal/AdminPanel';
+import { PortalLayout } from './components/portal/PortalLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
+import { TOAST_POSITION } from './utils/config';
 
 function AppContent() {
-  const { isAuthenticated, isAdmin, currentProfile, featureFlags } = useApp();
+  const { isAuthenticated, isAdmin, currentProfile } = useApp();
   const [currentPage, setCurrentPage] = useState('home');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -62,34 +69,32 @@ function AppContent() {
   // Admin view
   if (isAdmin) {
     return (
-      <>
-        <Header currentPage={currentPage} onNavigate={setCurrentPage} isPortalMode={true} />
+      <div className="min-h-screen mandala-bg">
+        <PortalHeader currentPage={currentPage} onNavigate={setCurrentPage} />
         {currentPage === 'admin' && <AdminPanel />}
         {currentPage === 'home' && <HomePage onOpenAuth={handleOpenAuth} />}
         <Toaster position="bottom-right" />
-      </>
+      </div>
     );
   }
 
-  // User view
+  // User view - Use new portal layout
   return (
     <>
-      <Header currentPage={currentPage} onNavigate={setCurrentPage} isPortalMode={true} />
-      {currentPage === 'home' && <HomePage onOpenAuth={handleOpenAuth} />}
-      {featureFlags.dashboard && currentPage === 'dashboard' && <DashboardPage />}
-      {currentPage === 'profile' && <ProfilePage />}
-      {featureFlags.quiz && currentPage === 'quiz' && <QuizPage />}
-      {featureFlags.events && currentPage === 'events' && <EventsPage />}
-      {featureFlags.leaderboard && currentPage === 'leaderboard' && <LeaderboardPage />}
-      <Toaster position="bottom-right" />
+      <PortalLayout />
+      <Toaster position={TOAST_POSITION} />
     </>
   );
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
+      </AppProvider>
+    </ThemeProvider>
   );
 }
