@@ -46,7 +46,7 @@ export const SUPABASE_CONFIG = {
  * Backend API URL
  * Only used when implementing a custom backend
  */
-export const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // ============================================================================
 // PHONE CONFIGURATION
