@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronRight, Zap } from 'lucide-react';
 import { cn } from '../ui/utils';
 
@@ -13,6 +14,8 @@ interface AdventureCardProps {
   unlockTime?: string;
   onClick?: () => void;
   className?: string;
+  buttonClassName?: string;
+  backgroundImage?: string;
 }
 
 export function AdventureCard({
@@ -27,40 +30,65 @@ export function AdventureCard({
   unlockTime,
   onClick,
   className,
+  buttonClassName,
+  backgroundImage,
 }: AdventureCardProps) {
-  // Locked card style (purple gradient)
+  // Locked card style (epic Mahabharata design)
   if (locked) {
     return (
       <div
         className={cn(
-          "relative rounded-3xl p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg",
+          "relative rounded-3xl overflow-hidden bg-white shadow-lg border-2 flex flex-col h-full",
           "hover:shadow-xl transition-all duration-300",
           className
         )}
+        style={{ borderColor: 'rgba(163, 52, 255, 0.2)' }}
       >
-        <div className="flex items-start gap-4">
-          {/* Icon */}
-          <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-2xl shadow-lg">
-            {icon}
-          </div>
+        {/* Epic Background Image Section */}
+        <div className="relative h-40 overflow-hidden flex-shrink-0">
+          {/* Background - either custom image or gradient */}
+          {backgroundImage ? (
+            <img 
+              src={backgroundImage} 
+              alt="Adventure background" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800"></div>
+              {/* Cosmic background effect */}
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ic3RhcnMiIHg9IjAiIHk9IjAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC44Ii8+PGNpcmNsZSBjeD0iMTUwIiBjeT0iODAiIHI9IjEuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjE1MCIgcj0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNyIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMTIwIiByPSIwLjgiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjkiLz48Y2lyY2xlIGN4PSIxNzAiIGN5PSIzMCIgcj0iMS4yIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC41Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3N0YXJzKSIvPjwvc3ZnPg==')] opacity-40"></div>
+              
+              {/* Silhouettes - Left archer */}
+              <div className="absolute left-4 bottom-0 text-6xl opacity-40">🏹</div>
+              
+              {/* Temple silhouette */}
+              <div className="absolute left-8 bottom-0 text-4xl opacity-30">🕌</div>
+              
+              {/* Silhouettes - Right archer */}
+              <div className="absolute right-4 bottom-0 text-6xl opacity-40 scale-x-[-1]">🏹</div>
+            </>
+          )}
 
-          {/* Content */}
-          <div className="flex-1">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-bold text-lg leading-tight">{title}</h3>
-              {unlockTime && (
-                <div className="flex items-center gap-1 text-sm font-semibold bg-white/20 rounded-full px-3 py-1">
-                  ✨ {unlockTime}
-                </div>
-              )}
-            </div>
-            <p className="text-white/90 text-sm leading-relaxed">{description}</p>
-          </div>
         </div>
 
-        {/* Decorative emoji */}
-        <div className="absolute top-4 right-4 text-2xl opacity-50">
-          🎁
+        {/* Content Section - Flex grow to push button down */}
+        <div className="p-5 bg-white flex flex-col flex-grow">
+          <div className="flex-grow">
+            <h3 className="font-bold text-xl text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-line">{description}</p>
+          </div>
+          
+          {/* Unlock Button - Sticks to bottom */}
+          <button 
+            disabled
+            className={cn(
+              "w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-purple-700 hover:to-purple-800 transition-all duration-300 disabled:opacity-90",
+              buttonClassName
+            )}
+          >
+            Unlock in {unlockTime}
+          </button>
         </div>
       </div>
     );

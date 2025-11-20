@@ -1,8 +1,19 @@
+import React from 'react';
 import { Coins, Flame, Target, Trophy, BookOpen, Video, Pencil, Image, ChevronRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { StatCard } from './StatCard';
 import { AdventureCard } from './AdventureCard';
+// @ts-ignore
+import welcomeBanner from '../../assets/welcome-banner.png';
+// @ts-ignore
+import welcomeBannerMobile from '../../assets/welcome-banner-mobile.png';
+// @ts-ignore
+import adventureCard1Bg from '../../assets/adventure-card-1.png';
+// @ts-ignore
+import adventureCard2Bg from '../../assets/adventure-card-2.png';
+// @ts-ignore
+import adventureCard3Bg from '../../assets/adventure-card-3.png';
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
@@ -78,14 +89,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 p-8 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {userName}! 🙏</h1>
-            <p className="text-orange-100">Ready to continue your journey with the Bhagavad Geeta?</p>
-          </div>
-          <div className="text-6xl opacity-20">🕉️</div>
-        </div>
+      <div className="rounded-2xl overflow-hidden">
+        {/* Desktop Banner - Shows by default, hidden on small screens */}
+        <img 
+          src={welcomeBanner} 
+          alt="Welcome back! Ready to continue your journey with the Bhagavad Geeta?" 
+          className="hidden sm:block w-full h-auto object-cover"
+        />
+        {/* Mobile Banner - Shown only on very small screens */}
+        <img 
+          src={welcomeBannerMobile} 
+          alt="Welcome back! Ready to continue your journey with the Bhagavad Geeta?" 
+          className="block sm:hidden w-full h-auto object-cover"
+        />
       </div>
 
       {/* Stats Grid */}
@@ -116,7 +132,17 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Upcoming Adventures</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {upcomingAdventures.map((adventure, index) => (
-            <AdventureCard key={index} {...adventure} />
+            <AdventureCard 
+              key={index} 
+              {...adventure} 
+              buttonClassName={index === 1 || index === 2 ? 'mt-12' : undefined}
+              backgroundImage={
+                index === 0 ? adventureCard1Bg : 
+                index === 1 ? adventureCard2Bg : 
+                index === 2 ? adventureCard3Bg :
+                undefined
+              }
+            />
           ))}
         </div>
       </div>
