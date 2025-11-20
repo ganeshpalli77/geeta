@@ -2,7 +2,7 @@ import { Coins, Flame, Target, Trophy, BookOpen, Video, Pencil, Image, ChevronRi
 import { useApp } from '../../contexts/AppContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { StatCard } from './StatCard';
-import { TaskCard } from './TaskCard';
+import { AdventureCard } from './AdventureCard';
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
@@ -23,49 +23,55 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   const todaysQuests = [
     {
-      icon: BookOpen,
+      icon: '📖',
       title: 'Daily Quiz Challenge',
-      description: 'Test your knowledge with 10 questions',
+      description: 'Test your knowledge of Chapter 2 • 5 questions',
       difficulty: 'Medium' as const,
       credits: 50,
+      progress: { current: 0, total: 1 },
       onClick: () => onNavigate?.('quiz'),
     },
     {
-      icon: Video,
-      title: 'Watch & Reflect',
-      description: 'Watch a 5-minute video and share your thoughts',
-      difficulty: 'Easy' as const,
-      credits: 30,
+      icon: '🎯',
+      title: 'Meaning Match Adventure',
+      description: 'Match shlokas with their meanings • Fun puzzle',
+      difficulty: 'Medium' as const,
+      credits: 75,
+      progress: { current: 0, total: 1 },
       onClick: () => onNavigate?.('events'),
     },
     {
-      icon: Pencil,
+      icon: '✍️',
       title: 'Creative Writing',
       description: 'Write a short essay on today\'s theme',
       difficulty: 'Hard' as const,
       credits: 100,
+      progress: { current: 0, total: 1 },
       onClick: () => onNavigate?.('events'),
     },
   ];
 
   const upcomingAdventures = [
     {
-      title: 'Round 3: Characters',
-      subtitle: 'Unlocks in 2 days',
-      icon: '👥',
-      onClick: () => onNavigate?.('round-3'),
+      icon: '🎁',
+      title: 'Next Adventure Unlocks Soon!',
+      description: 'Round 3 - Character Analysis\n\n🎭 Dive deep into the personalities of Krishna, Arjuna, and other legendary figures!',
+      unlockTime: '2 days',
+      locked: true,
     },
     {
+      icon: '🎁',
       title: 'Round 4: Application',
-      subtitle: 'Unlocks in 9 days',
-      icon: '🎯',
-      onClick: () => onNavigate?.('round-4'),
+      description: 'Apply Gita wisdom to modern life scenarios',
+      unlockTime: '9 days',
+      locked: true,
     },
     {
+      icon: '🎁',
       title: 'Round 5: Creative',
-      subtitle: 'Unlocks in 16 days',
-      icon: '🎨',
-      onClick: () => onNavigate?.('round-5'),
+      description: 'Express your learning through art and creativity',
+      unlockTime: '16 days',
+      locked: true,
     },
   ];
 
@@ -100,7 +106,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
         <div className="grid gap-4">
           {todaysQuests.map((quest, index) => (
-            <TaskCard key={index} {...quest} />
+            <AdventureCard key={index} {...quest} />
           ))}
         </div>
       </div>
@@ -110,15 +116,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Upcoming Adventures</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {upcomingAdventures.map((adventure, index) => (
-            <div
-              key={index}
-              className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all"
-              onClick={adventure.onClick}
-            >
-              <div className="text-4xl mb-3">{adventure.icon}</div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{adventure.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{adventure.subtitle}</p>
-            </div>
+            <AdventureCard key={index} {...adventure} />
           ))}
         </div>
       </div>

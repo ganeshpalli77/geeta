@@ -211,6 +211,7 @@
     --font-weight-black: 900;
     --tracking-wider: .05em;
     --tracking-widest: .1em;
+    --leading-tight: 1.25;
     --leading-relaxed: 1.625;
     --radius-xs: .125rem;
     --radius-2xl: 1rem;
@@ -1482,6 +1483,10 @@
     border-radius: var(--radius-2xl);
   }
 
+  .rounded-3xl {
+    border-radius: var(--radius-3xl);
+  }
+
   .rounded-\[25px\] {
     border-radius: 25px;
   }
@@ -1533,6 +1538,11 @@
   .border-4 {
     border-style: var(--tw-border-style);
     border-width: 4px;
+  }
+
+  .border-\[3px\] {
+    border-style: var(--tw-border-style);
+    border-width: 3px;
   }
 
   .border-t {
@@ -2555,6 +2565,10 @@
     padding: calc(var(--spacing) * 4);
   }
 
+  .p-5 {
+    padding: calc(var(--spacing) * 5);
+  }
+
   .p-6 {
     padding: calc(var(--spacing) * 6);
   }
@@ -2798,6 +2812,11 @@
     line-height: var(--leading-relaxed);
   }
 
+  .leading-tight {
+    --tw-leading: var(--leading-tight);
+    line-height: var(--leading-tight);
+  }
+
   .font-black {
     --tw-font-weight: var(--font-weight-black);
     font-weight: var(--font-weight-black);
@@ -2926,6 +2945,10 @@
 
   .text-orange-100 {
     color: var(--color-orange-100);
+  }
+
+  .text-orange-500 {
+    color: var(--color-orange-500);
   }
 
   .text-orange-600 {
@@ -3241,6 +3264,11 @@
     transition-duration: .2s;
   }
 
+  .duration-300 {
+    --tw-duration: .3s;
+    transition-duration: .3s;
+  }
+
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
@@ -3360,6 +3388,12 @@
   @media (hover: hover) {
     .hover\:border-orange-300:hover {
       border-color: var(--color-orange-300);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:border-yellow-500:hover {
+      border-color: var(--color-yellow-500);
     }
   }
 
@@ -3604,6 +3638,13 @@
   @media (hover: hover) {
     .hover\:shadow-md:hover {
       --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:shadow-xl:hover {
+      --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color, #0000001a), 0 8px 10px -6px var(--tw-shadow-color, #0000001a);
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
   }

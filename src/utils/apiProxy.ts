@@ -588,3 +588,299 @@ export const leaderboardAPI = {
     return apiCall(`/leaderboard/rank/${profileId}`, 'GET');
   },
 };
+
+// ============================================================================
+// QUIZ QUESTIONS API
+// ============================================================================
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
+  category: string;
+  chapter?: number;
+}
+
+export const quizQuestionsAPI = {
+  // Get quiz questions
+  getQuestions: async (
+    type: 'mock' | 'quiz1' | 'quiz2' | 'quiz3',
+    language: string = 'english'
+  ): Promise<QuizQuestion[]> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Import quiz data
+      const { getQuizQuestions } = await import('./mockQuizData');
+      
+      // Determine count and difficulty based on type
+      let count = 10;
+      let difficulty: 'easy' | 'medium' | 'hard' | 'expert' | undefined;
+      
+      if (type === 'mock') {
+        count = 10;
+        difficulty = 'easy';
+      } else if (type === 'quiz1') {
+        count = 30;
+        difficulty = 'medium';
+      } else if (type === 'quiz2') {
+        count = 30;
+        difficulty = 'hard';
+      } else if (type === 'quiz3') {
+        count = 30;
+        difficulty = 'expert';
+      }
+
+      return getQuizQuestions(language as any, { count, difficulty });
+    }
+    return apiCall(`/quiz/questions/${type}`, 'GET', undefined, language);
+  },
+};
+
+// ============================================================================
+// ROUNDS/TASKS API
+// ============================================================================
+
+export interface RoundTask {
+  id: string;
+  roundNumber: number;
+  title: string;
+  description: string;
+  type: 'quiz' | 'video' | 'slogan' | 'essay' | 'creative';
+  status: 'locked' | 'unlocked' | 'in-progress' | 'completed';
+  points: number;
+  dueDate?: string;
+  unlockDate?: string;
+}
+
+export const roundsAPI = {
+  // Get tasks for a specific round
+  getRoundTasks: async (roundNumber: number, profileId: string): Promise<RoundTask[]> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Mock round tasks based on round number
+      const roundTasks: Record<number, RoundTask[]> = {
+        1: [
+          {
+            id: 'r1-t1',
+            roundNumber: 1,
+            title: 'Introduction Quiz',
+            description: 'Test your basic knowledge of Bhagavad Gita',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r1-t2',
+            roundNumber: 1,
+            title: 'Introduction Video',
+            description: 'Share your understanding in a short video',
+            type: 'video',
+            status: 'unlocked',
+            points: 50,
+          },
+        ],
+        2: [
+          {
+            id: 'r2-t1',
+            roundNumber: 2,
+            title: 'Interpretation Quiz',
+            description: 'Interpret key verses from the Gita',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 150,
+          },
+          {
+            id: 'r2-t2',
+            roundNumber: 2,
+            title: 'Essay Writing',
+            description: 'Write an essay on your favorite verse',
+            type: 'essay',
+            status: 'unlocked',
+            points: 75,
+          },
+        ],
+        // Add more rounds as needed
+      };
+
+      return roundTasks[roundNumber] || [];
+    }
+    return apiCall(`/rounds/${roundNumber}/tasks/${profileId}`, 'GET');
+  },
+
+  // Update task status
+  updateTaskStatus: async (taskId: string, status: RoundTask['status']): Promise<void> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Mock implementation - store in localStorage
+      const tasksKey = 'roundTaskStatuses';
+      const statuses = JSON.parse(localStorage.getItem(tasksKey) || '{}');
+      statuses[taskId] = status;
+      localStorage.setItem(tasksKey, JSON.stringify(statuses));
+      return;
+    }
+    await apiCall(`/rounds/tasks/${taskId}/status`, 'PUT', { status });
+  },
+};
+
+// ============================================================================
+// NOTIFICATIONS API
+// ============================================================================
+
+export interface Notification {
+  id: string;
+  profileId: string;
+  type: 'quiz' | 'event' | 'achievement' | 'system';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  actionUrl?: string;
+}
+
+export const notificationsAPI = {
+  // Get notifications for a profile
+  getNotifications: async (profileId: string): Promise<Notification[]> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Mock notifications
+      const mockNotifications: Notification[] = [
+        {
+          id: 'n1',
+          profileId,
+          type: 'quiz',
+          title: 'New Quiz Available!',
+          message: 'Quiz Battle 2 is now unlocked. Test your knowledge!',
+          read: false,
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          actionUrl: '/quiz',
+        },
+        {
+          id: 'n2',
+          profileId,
+          type: 'achievement',
+          title: 'Achievement Unlocked!',
+          message: 'You earned the "Quiz Master" badge for scoring 90%+',
+          read: false,
+          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 'n3',
+          profileId,
+          type: 'event',
+          title: 'Video Approved!',
+          message: 'Your shloka recitation video was approved. You earned 50 points!',
+          read: true,
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        },
+      ];
+      return mockNotifications;
+    }
+    return apiCall(`/notifications/${profileId}`, 'GET');
+  },
+
+  // Mark notification as read
+  markAsRead: async (notificationId: string): Promise<void> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Mock implementation
+      return;
+    }
+    await apiCall(`/notifications/${notificationId}/read`, 'PUT');
+  },
+
+  // Mark all as read
+  markAllAsRead: async (profileId: string): Promise<void> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Mock implementation
+      return;
+    }
+    await apiCall(`/notifications/${profileId}/read-all`, 'PUT');
+  },
+};
+
+// ============================================================================
+// ACHIEVEMENTS/REWARDS API
+// ============================================================================
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'quiz' | 'events' | 'puzzle' | 'streak';
+  unlocked: boolean;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+}
+
+export const achievementsAPI = {
+  // Get achievements for a profile
+  getAchievements: async (profileId: string): Promise<Achievement[]> => {
+    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+      // Calculate achievements based on profile data
+      const quizAttempts = mockDb.find('quizAttempts', { profileId }) as QuizAttempt[];
+      const videos = mockDb.find('videoSubmissions', { profileId, status: 'approved' }) as VideoSubmission[];
+      const parts = mockDb.find('imageParts', { profileId }) as ImagePart[];
+
+      const achievements: Achievement[] = [
+        {
+          id: 'a1',
+          name: 'First Steps',
+          description: 'Complete your first quiz',
+          icon: '🎯',
+          category: 'quiz',
+          unlocked: quizAttempts.length > 0,
+          unlockedAt: quizAttempts[0]?.completedAt,
+        },
+        {
+          id: 'a2',
+          name: 'Quiz Master',
+          description: 'Score 90% or higher in any quiz',
+          icon: '🏆',
+          category: 'quiz',
+          unlocked: quizAttempts.some(a => (a.correctAnswers / a.totalQuestions) >= 0.9),
+        },
+        {
+          id: 'a3',
+          name: 'Video Star',
+          description: 'Submit your first video',
+          icon: '🎬',
+          category: 'events',
+          unlocked: videos.length > 0,
+          unlockedAt: videos[0]?.submittedAt,
+        },
+        {
+          id: 'a4',
+          name: 'Puzzle Hunter',
+          description: 'Collect 10 puzzle pieces',
+          icon: '🧩',
+          category: 'puzzle',
+          unlocked: parts.length >= 10,
+          progress: parts.length,
+          maxProgress: 10,
+        },
+        {
+          id: 'a5',
+          name: 'Puzzle Master',
+          description: 'Collect all 45 puzzle pieces',
+          icon: '🏅',
+          category: 'puzzle',
+          unlocked: parts.length === 45,
+          progress: parts.length,
+          maxProgress: 45,
+        },
+        {
+          id: 'a6',
+          name: 'Dedicated Learner',
+          description: 'Complete 5 quizzes',
+          icon: '📚',
+          category: 'quiz',
+          unlocked: quizAttempts.length >= 5,
+          progress: quizAttempts.length,
+          maxProgress: 5,
+        },
+      ];
+
+      return achievements;
+    }
+    return apiCall(`/achievements/${profileId}`, 'GET');
+  },
+};

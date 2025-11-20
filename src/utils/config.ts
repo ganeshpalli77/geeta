@@ -27,10 +27,10 @@ export const AUTH_MODE: 'mock' | 'supabase' | 'nodejs'= 'nodejs';
  * Supabase Configuration
  * Only used when AUTH_MODE = 'supabase'
  * 
- * IMPORTANT: Verify these values in Supabase Dashboard → Settings → API
+ * IMPORTANT: Verify these values in Supabase Dashboard ‚Üí Settings ‚Üí API
  * 
  * Common Issues:
- * - "Hook requires authorization token" → Disable Auth Hooks or configure properly
+ * - "Hook requires authorization token" ‚Üí Disable Auth Hooks or configure properly
  * - See SUPABASE_AUTH_HOOK_FIX.md for detailed troubleshooting
  */
 export const SUPABASE_CONFIG = {

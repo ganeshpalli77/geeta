@@ -8,6 +8,10 @@ import {
   eventAPI, 
   imagePuzzleAPI, 
   leaderboardAPI,
+  notificationsAPI,
+  achievementsAPI,
+  roundsAPI,
+  quizQuestionsAPI,
   type User as ApiUser,
   type Profile as ApiProfile,
   type QuizAttempt as ApiQuizAttempt,
@@ -15,6 +19,10 @@ import {
   type SloganSubmission as ApiSloganSubmission,
   type ImagePart as ApiImagePart,
   type LeaderboardEntry as ApiLeaderboardEntry,
+  type Notification as ApiNotification,
+  type Achievement as ApiAchievement,
+  type RoundTask as ApiRoundTask,
+  type QuizQuestion as ApiQuizQuestion,
 } from '../utils/apiProxy';
 import { initializeMockData } from '../utils/initMockData';
 import { supabase } from '../utils/supabaseClient';

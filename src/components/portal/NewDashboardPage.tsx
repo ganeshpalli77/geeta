@@ -1,10 +1,11 @@
 import { useApp } from '../../contexts/AppContext';
-import { useTranslation } from '../../utils/translations';
+import { useTranslation } from '../../contexts/LanguageContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner@2.0.3';
+import { AdventureCard } from './AdventureCard';
 import {
   Trophy,
   BookOpen,
@@ -24,7 +25,6 @@ import { motion } from 'motion/react';
 export function NewDashboardPage() {
   const {
     currentProfile,
-    language,
     quizAttempts,
     videoSubmissions,
     sloganSubmissions,
@@ -32,7 +32,7 @@ export function NewDashboardPage() {
     getTotalScore,
     collectImagePart,
   } = useApp();
-  const t = useTranslation(language);
+  const t = useTranslation();
 
   if (!currentProfile) {
     return (

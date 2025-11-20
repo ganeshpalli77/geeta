@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { useTranslation } from '../../utils/translations';
+import { useTranslation } from '../../contexts/LanguageContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
@@ -9,6 +9,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner@2.0.3';
 import { generateMixedQuiz, calculateScore } from '../../utils/quizData';
 import { QuizQuestion } from '../../contexts/AppContext';
+import { AdventureCard } from './AdventureCard';
 import {
   BookOpen,
   Clock,
@@ -26,8 +27,8 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 export function QuizPage() {
-  const { currentProfile, language, getAvailableQuizzes, submitQuiz, setQuizInProgress, devMode, toggleDevMode } = useApp();
-  const t = useTranslation(language);
+  const { currentProfile, getAvailableQuizzes, submitQuiz, setQuizInProgress, devMode, toggleDevMode } = useApp();
+  const t = useTranslation();
 
   const [selectedQuiz, setSelectedQuiz] = useState<'mock' | 'quiz1' | 'quiz2' | 'quiz3' | null>(null);
   const [quizStarted, setQuizStarted] = useState(false);
@@ -224,11 +225,11 @@ export function QuizPage() {
                       <span className="text-sm md:text-base font-semibold text-[#193C77] min-w-[30px]">Q{index + 1}.</span>
                       <div className="flex-1">
                         <p className="text-sm md:text-base text-[#822A12] mb-3">
-                          {language === 'hi' ? question.questionHi : question.question}
+                          {t.language === 'hi' ? question.questionHi : question.question}
                         </p>
 
                         <div className="space-y-2 mb-3">
-                          {(language === 'hi' ? question.optionsHi : question.options).map((option, optIndex) => {
+                          {(t.language === 'hi' ? question.optionsHi : question.options).map((option, optIndex) => {
                             const isUserAnswer = userAnswer === optIndex;
                             const isCorrectAnswer = question.correctAnswer === optIndex;
 
@@ -406,7 +407,7 @@ export function QuizPage() {
               Difficulty: <span className="capitalize px-2 py-1 bg-[#FFF8ED] rounded text-xs md:text-sm">{currentQuestion.difficulty}</span>
             </div>
             <h3 className="text-lg md:text-xl lg:text-2xl text-[#822A12] mb-2">
-              {language === 'hi' ? currentQuestion.questionHi : currentQuestion.question}
+              {t.language === 'hi' ? currentQuestion.questionHi : currentQuestion.question}
             </h3>
           </div>
 
@@ -415,7 +416,7 @@ export function QuizPage() {
             onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
           >
             <div className="space-y-3 md:space-y-4">
-              {(language === 'hi' ? currentQuestion.optionsHi : currentQuestion.options).map((option, index) => (
+              {(t.language === 'hi' ? currentQuestion.optionsHi : currentQuestion.options).map((option, index) => (
                 <div
                   key={index}
                   className={`flex items-center space-x-2 md:space-x-3 p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer ${
