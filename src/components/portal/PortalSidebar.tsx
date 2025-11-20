@@ -51,8 +51,10 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
             <span className="text-white text-sm">🕉️</span>
           </div>
           <div>
-            <div className="text-sm font-bold text-gray-900 dark:text-white">LearnGita</div>
-            <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Olympiad</div>
+            <div className="hidden sm:block">
+              <div className="text-sm font-bold text-gray-900 dark:text-white">LearnGeeta</div>
+              <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Olympiad</div>
+            </div>
           </div>
         </div>
       </div>

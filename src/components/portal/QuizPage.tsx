@@ -537,7 +537,7 @@ export function QuizPage() {
             {devMode ? '✓ Dev Mode' : 'Dev Mode'}
           </Button>
         </div>
-        <p className="text-sm md:text-base text-[#193C77]">Test your knowledge of the Bhagavad Gita</p>
+        <p className="text-sm md:text-base text-[#193C77]">Test your knowledge of the Bhagavad Geeta</p>
         {devMode && (
           <p className="text-xs md:text-sm text-green-600 mt-2">
             🔓 Dev Mode Active - All quizzes unlocked for testing

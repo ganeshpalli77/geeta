@@ -282,7 +282,7 @@ export function NewQuizPage() {
                 </h1>
               </div>
               <p className="text-white/80 text-lg">
-                Choose a quiz to test your understanding of the Bhagavad Gita
+                Choose a quiz to test your understanding of the Bhagavad Geeta
               </p>
             </motion.div>
           </div>

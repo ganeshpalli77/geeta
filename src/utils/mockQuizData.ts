@@ -12,15 +12,15 @@ export interface QuizQuestion {
   correctAnswer: number; // Index of correct option (0-3)
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   round: number;
-  chapter?: number; // Bhagavad Gita chapter
-  verse?: number; // Verse number
+  chapter?: number; // Bhagavad Geeta chapter
+  verse?: number; // Verse number;
 }
 
 // English Questions
 const englishQuestions: QuizQuestion[] = [
   {
     id: 'en_q1',
-    question: 'Who is the speaker of the Bhagavad Gita?',
+    question: 'Who is the speaker of the Bhagavad Geeta?',
     options: ['Arjuna', 'Krishna', 'Vyasa', 'Sanjaya'],
     correctAnswer: 1,
     difficulty: 'easy',
@@ -29,7 +29,7 @@ const englishQuestions: QuizQuestion[] = [
   },
   {
     id: 'en_q2',
-    question: 'How many chapters are there in the Bhagavad Gita?',
+    question: 'How many chapters are there in the Bhagavad Geeta?',
     options: ['16', '18', '20', '22'],
     correctAnswer: 1,
     difficulty: 'easy',
@@ -46,7 +46,7 @@ const englishQuestions: QuizQuestion[] = [
   },
   {
     id: 'en_q4',
-    question: 'On which battlefield was the Bhagavad Gita delivered?',
+    question: 'On which battlefield was the Bhagavad Geeta delivered?',
     options: ['Hastinapura', 'Kurukshetra', 'Indraprastha', 'Dwarka'],
     correctAnswer: 1,
     difficulty: 'easy',
@@ -55,7 +55,7 @@ const englishQuestions: QuizQuestion[] = [
   },
   {
     id: 'en_q5',
-    question: 'What does "Gita" mean?',
+    question: 'What does "Geeta" mean?',
     options: ['Story', 'Song', 'Teaching', 'Battle'],
     correctAnswer: 1,
     difficulty: 'easy',

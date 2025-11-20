@@ -29,7 +29,7 @@ export const en = {
   // Auth Pages
   auth: {
     welcomeTitle: "Welcome to Geeta Olympiad",
-    welcomeSubtitle: "Join thousands learning the wisdom of Bhagavad Gita",
+    welcomeSubtitle: "Join thousands learning the wisdom of Bhagavad Geeta",
     login: "Login",
     signup: "Sign Up",
     enterEmail: "Enter your email",

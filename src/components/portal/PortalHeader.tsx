@@ -67,7 +67,7 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
             </div>
             <div>
               <h1 className="text-lg text-[#1E3A8A] dark:text-amber-400">
-                Gita Olympiad
+                Geeta Olympiad
               </h1>
               {currentProfile && (
                 <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -175,7 +175,7 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] sm:w-[320px]">
                 <SheetHeader>
-                  <SheetTitle>Gita Olympiad</SheetTitle>
+                  <SheetTitle>Geeta Olympiad</SheetTitle>
                   <SheetDescription>
                     {currentProfile ? currentProfile.name : 'Navigation Menu'}
                   </SheetDescription>

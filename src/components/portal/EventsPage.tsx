@@ -153,7 +153,7 @@ export function EventsPage() {
                 {t('submitShloka')}
               </h2>
               <p className="text-gray-600 mb-6">
-                Share your Shloka chanting videos from the Bhagavad Gita. Videos will be reviewed by admins and awarded points.
+                Share your Shloka chanting videos from the Bhagavad Geeta. Videos will be reviewed by admins and awarded points.
               </p>
 
               <div className="space-y-4">
@@ -260,7 +260,7 @@ export function EventsPage() {
                 {t('submitReel')}
               </h2>
               <p className="text-gray-600 mb-6">
-                Share your creative reels about the Bhagavad Gita. Reels will be reviewed by admins and awarded points.
+                Share your creative reels about the Bhagavad Geeta. Reels will be reviewed by admins and awarded points.
               </p>
 
               <div className="space-y-4">
@@ -367,7 +367,7 @@ export function EventsPage() {
                 {t('submitSlogan')}
               </h2>
               <p className="text-gray-600 mb-6">
-                Create inspiring slogans based on the teachings of the Bhagavad Gita. You can submit multiple slogans.
+                Create inspiring slogans based on the teachings of the Bhagavad Geeta. You can submit multiple slogans.
               </p>
 
               <div className="space-y-4">

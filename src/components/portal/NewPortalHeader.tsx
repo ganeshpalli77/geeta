@@ -33,7 +33,7 @@ export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProp
               <span className="text-white text-sm">🕉️</span>
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-bold text-gray-900 dark:text-white">LearnGita</div>
+              <div className="text-sm font-bold text-gray-900 dark:text-white">LearnGeeta</div>
               <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Olympiad</div>
             </div>
           </div>

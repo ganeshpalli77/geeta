@@ -62,7 +62,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     {
       icon: '🎁',
       title: 'Round 4: Application',
-      description: 'Apply Gita wisdom to modern life scenarios',
+      description: 'Apply Geeta wisdom to modern life scenarios',
       unlockTime: '9 days',
       locked: true,
     },
@@ -82,7 +82,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">Welcome back, {userName}! 🙏</h1>
-            <p className="text-orange-100">Ready to continue your journey with the Bhagavad Gita?</p>
+            <p className="text-orange-100">Ready to continue your journey with the Bhagavad Geeta?</p>
           </div>
           <div className="text-6xl opacity-20">🕉️</div>
         </div>

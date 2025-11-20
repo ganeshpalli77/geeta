@@ -5,7 +5,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   // Easy Questions (Chapters 1-6)
   {
     id: 'q1',
-    question: 'In which historical epic is the Bhagavad Gita found?',
+    question: 'In which historical epic is the Bhagavad Geeta found?',
     questionHi: 'भगवद गीता किस ऐतिहासिक महाकाव्य में पाई जाती है?',
     options: ['Ramayana', 'Mahabharata', 'Puranas', 'Vedas'],
     optionsHi: ['रामायण', 'महाभारत', 'पुराण', 'वेद'],
@@ -15,7 +15,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q2',
-    question: 'Who is the speaker of the Bhagavad Gita?',
+    question: 'Who is the speaker of the Bhagavad Geeta?',
     questionHi: 'भगवद गीता का वक्ता कौन है?',
     options: ['Arjuna', 'Krishna', 'Vyasa', 'Sanjaya'],
     optionsHi: ['अर्जुन', 'कृष्ण', 'व्यास', 'संजय'],
@@ -25,7 +25,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q3',
-    question: 'To whom is the Bhagavad Gita primarily addressed?',
+    question: 'To whom is the Bhagavad Geeta primarily addressed?',
     questionHi: 'भगवद गीता मुख्य रूप से किसे संबोधित है?',
     options: ['Duryodhana', 'Arjuna', 'Yudhishthira', 'Bhima'],
     optionsHi: ['दुर्योधन', 'अर्जुन', 'युधिष्ठिर', 'भीम'],
@@ -35,7 +35,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q4',
-    question: 'On which battlefield was the Bhagavad Gita spoken?',
+    question: 'On which battlefield was the Bhagavad Geeta spoken?',
     questionHi: 'भगवद गीता किस युद्धक्षेत्र पर बोली गई थी?',
     options: ['Hastinapura', 'Kurukshetra', 'Panchal', 'Indraprastha'],
     optionsHi: ['हस्तिनापुर', 'कुरुक्षेत्र', 'पांचाल', 'इंद्रप्रस्थ'],
@@ -45,7 +45,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q5',
-    question: 'How many chapters are there in the Bhagavad Gita?',
+    question: 'How many chapters are there in the Bhagavad Geeta?',
     questionHi: 'भगवद गीता में कितने अध्याय हैं?',
     options: ['12', '18', '24', '16'],
     optionsHi: ['12', '18', '24', '16'],
@@ -55,7 +55,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q6',
-    question: 'What does "Gita" literally mean?',
+    question: 'What does "Geeta" literally mean?',
     questionHi: '"गीता" का शाब्दिक अर्थ क्या है?',
     options: ['Story', 'Song', 'Teaching', 'Discourse'],
     optionsHi: ['कहानी', 'गीत', 'शिक्षा', 'प्रवचन'],
@@ -65,7 +65,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q7',
-    question: 'What is the first word of the Bhagavad Gita?',
+    question: 'What is the first word of the Bhagavad Geeta?',
     questionHi: 'भगवद गीता का पहला शब्द क्या है?',
     options: ['Dharma', 'Krishna', 'Arjuna', 'Dharmakshetra'],
     optionsHi: ['धर्म', 'कृष्ण', 'अर्जुन', 'धर्मक्षेत्र'],
@@ -75,7 +75,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q8',
-    question: 'What was Arjuna\'s dilemma at the beginning of the Gita?',
+    question: 'What was Arjuna\'s dilemma at the beginning of the Geeta?',
     questionHi: 'गीता की शुरुआत में अर्जुन की दुविधा क्या थी?',
     options: [
       'Fear of losing the war',
@@ -95,7 +95,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q9',
-    question: 'According to the Gita, what are the three types of yoga mentioned?',
+    question: 'According to the Geeta, what are the three types of yoga mentioned?',
     questionHi: 'गीता के अनुसार, उल्लिखित योग के तीन प्रकार क्या हैं?',
     options: [
       'Hatha, Raja, Kundalini',
@@ -137,7 +137,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   // Medium Questions (Chapters 7-12)
   {
     id: 'q11',
-    question: 'What are the three gunas mentioned in the Bhagavad Gita?',
+    question: 'What are the three gunas mentioned in the Bhagavad Geeta?',
     questionHi: 'भगवद गीता में उल्लिखित तीन गुण क्या हैं?',
     options: [
       'Dharma, Artha, Kama',
@@ -167,7 +167,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q13',
-    question: 'What is the concept of "Atman" in the Gita?',
+    question: 'What is the concept of "Atman" in the Geeta?',
     questionHi: 'गीता में "आत्मा" की अवधारणा क्या है?',
     options: [
       'The physical body',
@@ -187,7 +187,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q14',
-    question: 'According to the Gita, what happens to the soul after death?',
+    question: 'According to the Geeta, what happens to the soul after death?',
     questionHi: 'गीता के अनुसार, मृत्यु के बाद आत्मा का क्या होता है?',
     options: [
       'It dies with the body',
@@ -259,7 +259,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q18',
-    question: 'What are the four types of devotees mentioned in the Gita?',
+    question: 'What are the four types of devotees mentioned in the Geeta?',
     questionHi: 'गीता में उल्लिखित चार प्रकार के भक्त कौन से हैं?',
     options: [
       'Brahmins, Kshatriyas, Vaishyas, Shudras',
@@ -279,7 +279,7 @@ export const quizQuestionPool: QuizQuestion[] = [
   },
   {
     id: 'q19',
-    question: 'What is "Yoga-Maya" in the context of the Gita?',
+    question: 'What is "Yoga-Maya" in the context of the Geeta?',
     questionHi: 'गीता के संदर्भ में "योग-माया" क्या है?',
     options: [
       'A type of yoga practice',
@@ -389,7 +389,7 @@ export function generateAdditionalQuestions(): QuizQuestion[] {
     
     additionalQuestions.push({
       id: `q${i}`,
-      question: `Question ${i} about ${topic} in the Bhagavad Gita?`,
+      question: `Question ${i} about ${topic} in the Bhagavad Geeta?`,
       questionHi: `भगवद गीता में ${topic} के बारे में प्रश्न ${i}?`,
       options: [
         `Option A for question ${i}`,
