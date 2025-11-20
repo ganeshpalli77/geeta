@@ -20,8 +20,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { User, Plus, Edit, UserCircle } from 'lucide-react';
+import { ProfileManager } from './ProfileManager';
 
 export function ProfilePage() {
   const {
@@ -33,6 +34,7 @@ export function ProfilePage() {
     language,
   } = useApp();
   const t = useTranslation(language);
+  const [showManager, setShowManager] = useState(false);
 
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -430,6 +432,19 @@ export function ProfilePage() {
               </div>
             )}
           </Card>
+
+          {/* Multiple Profiles Manager */}
+          {user && (
+            <Card className="p-6 mt-6">
+              <ProfileManager 
+                userId={user.id} 
+                onProfileSelect={(profileId) => {
+                  switchProfile(profileId);
+                  toast.success('Profile switched successfully');
+                }}
+              />
+            </Card>
+          )}
         </div>
       </div>
     </div>

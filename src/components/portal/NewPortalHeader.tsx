@@ -2,6 +2,7 @@ import { Bell, User, Menu, Sun, Moon, LogOut, UserCircle, Settings } from 'lucid
 import { useTheme } from '../../contexts/ThemeContext';
 import { useApp } from '../../contexts/AppContext';
 import { LanguageSelector } from '../LanguageSelector';
+import { ProfileSelector } from './ProfileSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,7 @@ interface NewPortalHeaderProps {
 
 export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProps) {
   const { isDark, toggleTheme } = useTheme();
-  const { currentProfile, logout } = useApp();
+  const { currentProfile, logout, user } = useApp();
 
   return (
     <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
@@ -50,6 +51,13 @@ export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProp
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-2">
+          {/* Profile Selector - Quick Switch */}
+          {user && user.profiles && user.profiles.length > 1 && (
+            <div className="hidden md:block">
+              <ProfileSelector userId={user.id} compact={true} />
+            </div>
+          )}
+
           {/* Language Selector */}
           <LanguageSelector variant="compact" showLabel={false} />
 
@@ -96,11 +104,11 @@ export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProp
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{currentProfile?.name || 'User'}</p>
-                  <p className="text-xs text-gray-500">{currentProfile?.prn || ''}</p>
+                  <p className="text-xs text-gray-500">{user?.email || user?.phone || ''}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onNavigate('profile')}>
+              <DropdownMenuItem onClick={() => onNavigate('profile-selection')}>
                 <UserCircle className="w-4 h-4 mr-2" />
                 Profile
               </DropdownMenuItem>

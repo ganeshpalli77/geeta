@@ -3,7 +3,7 @@ import { User, Mail, School, MapPin, Calendar, Trophy, Target, Zap, Activity, Lo
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { motion } from 'motion/react';
 import { ProfileCreationForm } from './ProfileCreationForm';
@@ -41,7 +41,7 @@ export function ProfileNew() {
 
   // Get consistent profile picture based on profile ID
   const getProfilePicture = () => {
-    if (!currentProfile) return profilePictures[0];
+    if (!currentProfile || !currentProfile.id) return profilePictures[0];
     const hash = currentProfile.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return profilePictures[hash % profilePictures.length];
   };
@@ -54,7 +54,7 @@ export function ProfileNew() {
   const profileSlogans = sloganSubmissions.filter(s => s.profileId === currentProfile?.id);
   
   // Calculate quiz accuracy
-  const completedQuizzes = profileQuizAttempts.filter(q => q.completed);
+  const completedQuizzes = profileQuizAttempts.filter(q => q.completedAt);
   const totalQuestions = completedQuizzes.reduce((sum, q) => sum + q.totalQuestions, 0);
   const correctAnswers = completedQuizzes.reduce((sum, q) => sum + q.correctAnswers, 0);
   const quizAccuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
@@ -176,8 +176,15 @@ export function ProfileNew() {
   const approvedSlogans = profileSlogans.filter(s => s.status === 'approved').length;
   const tasksCompleted = completedQuizzes.length + approvedVideos + approvedSlogans + collectedPuzzles;
 
-  // Show profile creation form if no profile exists
+  // If no current profile, check if user has any profiles
   if (!currentProfile) {
+    // If user has profiles, show selection page instead of creation form
+    if (user?.profiles && user.profiles.length > 0) {
+      // Redirect to profile selection
+      window.location.hash = '#profile-selection';
+      return null;
+    }
+    // Otherwise show creation form
     return <ProfileCreationForm />;
   }
 
@@ -348,7 +355,7 @@ export function ProfileNew() {
               className={cn(
                 "relative rounded-xl p-4 border-2 transition-all cursor-pointer",
                 achievement.unlocked
-                  ? `bg-gradient-to-br ${rarityColors[achievement.rarity]} border-yellow-300 shadow-lg`
+                  ? `bg-gradient-to-br ${rarityColors[achievement.rarity as keyof typeof rarityColors]} border-yellow-300 shadow-lg`
                   : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 opacity-50 grayscale"
               )}
             >
@@ -510,7 +517,7 @@ export function ProfileNew() {
         </div>
       </motion.div>
 
-      {/* Logout */}
+      {/* Account Actions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -518,18 +525,27 @@ export function ProfileNew() {
         className="p-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
       >
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Account</h2>
-        <button 
-          className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-red-600 dark:text-red-400 flex items-center gap-2 font-bold" 
-          onClick={() => {
-            if (confirm('Leave the battlefield? You can return anytime!')) {
-              logout();
-              toast.success('See you soon, warrior! 👋');
-            }
-          }}
-        >
-          <LogOut className="w-4 h-4" />
-          Leave Battlefield
-        </button>
+        <div className="space-y-2">
+          <button 
+            className="w-full text-left px-4 py-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors text-indigo-600 dark:text-indigo-400 flex items-center gap-2 font-bold" 
+            onClick={() => window.location.hash = '#profile-selection'}
+          >
+            <User className="w-4 h-4" />
+            Manage Profiles ({user?.profiles?.length || 0})
+          </button>
+          <button 
+            className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-red-600 dark:text-red-400 flex items-center gap-2 font-bold" 
+            onClick={() => {
+              if (confirm('Leave the battlefield? You can return anytime!')) {
+                logout();
+                toast.success('See you soon, warrior! 👋');
+              }
+            }}
+          >
+            <LogOut className="w-4 h-4" />
+            Leave Battlefield
+          </button>
+        </div>
       </motion.div>
     </div>
   );

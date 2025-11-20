@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { PortalSidebar } from './PortalSidebar';
 import { NewPortalHeader } from './NewPortalHeader';
@@ -12,14 +12,35 @@ import { ProfileNew } from './ProfileNew';
 import { NewQuizPage } from './NewQuizPage';
 import { EventsPage } from './EventsPage';
 import { SettingsPage } from './SettingsPage';
+import { ProfileSelectionPage } from './ProfileSelectionPage';
 import { cn } from '../ui/utils';
 
 export function PortalLayout() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  // Get initial page from URL hash
+  const getInitialPage = () => {
+    const hash = window.location.hash.slice(1); // Remove the '#'
+    return hash || 'dashboard';
+  };
+
+  const [currentPage, setCurrentPage] = useState(getInitialPage());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Listen for hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        setCurrentPage(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
+    window.location.hash = `#${page}`; // Update URL hash
     setSidebarOpen(false); // Close sidebar on mobile after navigation
   };
 
@@ -51,6 +72,8 @@ export function PortalLayout() {
         return <NotificationsPage />;
       case 'profile':
         return <ProfileNew />;
+      case 'profile-selection':
+        return <ProfileSelectionPage />;
       case 'quiz':
         return <NewQuizPage />;
       case 'events':

@@ -27,7 +27,8 @@ import {
 import { initializeMockData } from '../utils/initMockData';
 import { supabase } from '../utils/supabaseClient';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import { backendAPI } from '../services/backendAPI';
 
 // Types (keeping backward compatibility with existing components)
 export interface UserProfile {
@@ -274,16 +275,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const email = supabaseUser.email;
       const phone = supabaseUser.phone;
 
+      // Register user in MongoDB backend (new separate collections)
+      let backendUserId: string | undefined;
+      try {
+        if (email) {
+          // Register with email in email_users collection
+          const { user: emailUser } = await backendAPI.registerEmailUser(email);
+          backendUserId = emailUser._id;
+          console.log('Email user registered in MongoDB:', emailUser);
+        } else if (phone) {
+          // Register with phone in phone_users collection
+          const { user: phoneUser } = await backendAPI.registerPhoneUser(phone);
+          backendUserId = phoneUser._id;
+          console.log('Phone user registered in MongoDB:', phoneUser);
+        }
+
+        // Also register in legacy users collection for backward compatibility
+        if (backendUserId) {
+          await backendAPI.registerUser({
+            userId: supabaseUser.id, // Pass Supabase UUID
+            email: email || undefined,
+            phone: phone || undefined,
+          });
+        }
+      } catch (error) {
+        console.error('Error registering user in MongoDB:', error);
+        // Continue even if MongoDB registration fails
+      }
+
       // Create or get user from API
       // Use Supabase user ID as the primary identifier
       let apiUser: ApiUser;
       try {
         // Try to get existing user by Supabase ID
         apiUser = await userAPI.getUser(supabaseUser.id);
-      } catch {
+        console.log('Found existing user:', apiUser);
+      } catch (error) {
         // User doesn't exist in our system yet
         // Create a minimal user object from Supabase data
-        // The user will be created in the database when they first create a profile
+        console.log('User not found in API, creating minimal user object');
         apiUser = {
           _id: supabaseUser.id,
           email: email || undefined,
@@ -297,9 +327,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Get user's profiles (if any)
       let profiles: ApiProfile[] = [];
       try {
-        profiles = await profileAPI.getProfilesByUser(apiUser._id);
-      } catch {
+        profiles = await profileAPI.getProfilesByUser(supabaseUser.id);
+        // Ensure profiles is an array
+        if (!Array.isArray(profiles)) {
+          profiles = [];
+        }
+      } catch (error) {
         // No profiles yet, that's fine
+        console.log('No profiles found for user:', error);
         profiles = [];
       }
 
@@ -467,44 +502,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
-    if (!state.user) return;
+    if (!state.user) {
+      console.error('No user found in state');
+      return;
+    }
 
     try {
-      // Ensure user exists in the API system
-      // If user was created from Supabase, we need to ensure they exist in our API
-      try {
-        await userAPI.getUser(state.user.id);
-      } catch {
-        // User doesn't exist in API, create them
-        const { email, phone } = state.user;
-        await userAPI.updateUser(state.user.id, {
-          email: email || undefined,
-          phone: phone || undefined,
-          profiles: [],
-        });
-      }
-
+      console.log('Creating profile for user:', state.user.id);
+      
       const newProfile = await profileAPI.createProfile({
         userId: state.user.id,
         name: profileData.name,
         prn: profileData.prn,
         dob: profileData.dob,
         preferredLanguage: profileData.preferredLanguage,
+        category: profileData.category,
       });
 
-      const profiles = await profileAPI.getProfilesByUser(state.user.id);
+      console.log('Profile created:', newProfile);
       
-      setState(prev => ({
-        ...prev,
-        user: prev.user ? {
-          ...prev.user,
-          profiles: profiles.map(convertApiProfileToProfile),
-        } : null,
-        currentProfile: convertApiProfileToProfile(newProfile),
-        language: newProfile.preferredLanguage,
-      }));
-
-      await loadProfileData(newProfile._id);
+      // Handle both response formats: direct profile or wrapped in {success, profile}
+      const actualProfile = (newProfile as any).profile || newProfile;
+      console.log('Actual profile object:', actualProfile);
+      console.log('Profile _id:', actualProfile._id);
+      
+      // Always redirect to profile selection, even if _id is missing
+      // The profile selection page will reload all profiles from the server
+      toast.success('');
+      
+      // Redirect to profile selection page to show all profiles
+      setTimeout(() => {
+        window.location.hash = '#profile-selection';
+        // Reload the page to ensure fresh data
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error creating profile:', error);
       throw error;

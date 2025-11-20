@@ -45,7 +45,8 @@ export function ProfileCreationForm() {
       toast.success('⚔️ Warrior profile created! Welcome to the arena! 🏆');
     } catch (error) {
       console.error('Error creating profile:', error);
-      toast.error('Failed to create profile. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create profile';
+      toast.error(errorMessage.replace('API call failed: ', ''));
     } finally {
       setLoading(false);
     }

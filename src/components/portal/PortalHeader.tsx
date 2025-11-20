@@ -38,7 +38,7 @@ interface PortalHeaderProps {
 }
 
 export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
-  const { currentProfile, language, setLanguage, logout } = useApp();
+  const { currentProfile, language, changeLanguage, logout, user } = useApp();
   const { isDark, toggleTheme } = useTheme();
   const t = useTranslation(language);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -123,7 +123,7 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+              onClick={() => changeLanguage(language === 'en' ? 'hi' : 'en')}
               className="hidden sm:flex text-gray-600 dark:text-gray-300"
             >
               {language === 'en' ? 'हिं' : 'EN'}
@@ -150,11 +150,11 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
                     </Avatar>
                     <div className="flex flex-col">
                       <p className="text-sm">{currentProfile.name}</p>
-                      <p className="text-xs text-gray-500">{currentProfile.prn}</p>
+                      <p className="text-xs text-gray-500">{user?.email || user?.phone || ''}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleNavigation('profile')}>
+                  <DropdownMenuItem onClick={() => handleNavigation('profile-selection')}>
                     <User className="w-4 h-4 mr-2" />
                     {t('profile')}
                   </DropdownMenuItem>
