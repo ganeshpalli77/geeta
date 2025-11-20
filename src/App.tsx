@@ -58,7 +58,7 @@ function AppContent() {
                 {authMode === 'login' ? 'Sign in to your account' : 'Create a new account'}
               </DialogDescription>
             </DialogHeader>
-            <AuthPage mode={authMode} />
+            <AuthPage mode={authMode} onSwitchMode={handleOpenAuth} />
           </DialogContent>
         </Dialog>
         <Toaster position="bottom-right" />
