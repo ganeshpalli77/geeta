@@ -1,6 +1,8 @@
-import { Home, CheckSquare, Trophy, Award, BookOpen, Settings } from 'lucide-react';
+import { Home, CheckSquare, Trophy, Award, BookOpen, Settings, LogOut } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { useApp } from '../../contexts/AppContext';
+import { toast } from 'sonner';
 
 interface Round {
   id: number;
@@ -27,6 +29,7 @@ interface PortalSidebarProps {
 
 export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
   const t = useTranslation();
+  const { logout } = useApp();
   
   // Round color mapping (LogiQids style)
   const getRoundColor = (id: number) => {
@@ -167,6 +170,19 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
           >
             <Settings className="w-4 h-4" />
             {t.nav.settings}
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to logout?')) {
+                logout();
+                toast.success('Logged out successfully!');
+              }
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
           </button>
         </nav>
       </div>

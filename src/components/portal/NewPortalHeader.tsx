@@ -1,7 +1,16 @@
-import { Bell, User, Menu, Sun, Moon } from 'lucide-react';
+import { Bell, User, Menu, Sun, Moon, LogOut, UserCircle, Settings } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useApp } from '../../contexts/AppContext';
 import { LanguageSelector } from '../LanguageSelector';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface NewPortalHeaderProps {
   onNavigate: (page: string) => void;
@@ -10,7 +19,7 @@ interface NewPortalHeaderProps {
 
 export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProps) {
   const { isDark, toggleTheme } = useTheme();
-  const { currentProfile } = useApp();
+  const { currentProfile, logout } = useApp();
 
   return (
     <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm">
@@ -67,20 +76,53 @@ export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProp
             <span className="absolute top-2 right-2 w-2 h-2 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full animate-pulse"></span>
           </button>
 
-          {/* Profile */}
-          <button
-            onClick={() => onNavigate('profile')}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/30"
-            aria-label="Profile"
-          >
-            {currentProfile?.name ? (
-              <span className="text-white text-sm font-bold">
-                {currentProfile.name.charAt(0).toUpperCase()}
-              </span>
-            ) : (
-              <User className="w-5 h-5 text-white" />
-            )}
-          </button>
+          {/* Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/30"
+                aria-label="Profile"
+              >
+                {currentProfile?.name ? (
+                  <span className="text-white text-sm font-bold">
+                    {currentProfile.name.charAt(0).toUpperCase()}
+                  </span>
+                ) : (
+                  <User className="w-5 h-5 text-white" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{currentProfile?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{currentProfile?.prn || ''}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onNavigate('profile')}>
+                <UserCircle className="w-4 h-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onNavigate('settings')}>
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => {
+                  if (confirm('Are you sure you want to logout?')) {
+                    logout();
+                    toast.success('Logged out successfully!');
+                  }
+                }}
+                className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
