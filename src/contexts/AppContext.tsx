@@ -180,28 +180,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     initializeMockData();
   }, []);
 
-  const [state, setState] = useState<AppState>(() => {
-    // Load from sessionStorage (for current session only)
-    const stored = sessionStorage.getItem('geetaOlympiadSession');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Ensure devMode exists for backwards compatibility
-      return { ...parsed, devMode: parsed.devMode ?? false };
-    }
-    return {
-      user: null,
-      currentProfile: null,
-      language: 'en',
-      isAuthenticated: false,
-      isAdmin: false,
-      quizAttempts: [],
-      videoSubmissions: [],
-      sloganSubmissions: [],
-      imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
-      leaderboard: [],
-      quizInProgress: false,
-      devMode: false,
-    };
+  const [state, setState] = useState<AppState>({
+    user: null,
+    currentProfile: null,
+    language: 'en',
+    isAuthenticated: false,
+    isAdmin: false,
+    quizAttempts: [],
+    videoSubmissions: [],
+    sloganSubmissions: [],
+    imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
+    leaderboard: [],
+    quizInProgress: false,
+    devMode: false,
   });
 
   const loadProfileData = async (profileId: string) => {
@@ -310,6 +301,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Try to get existing user by Supabase ID
         apiUser = await userAPI.getUser(supabaseUser.id);
         console.log('Found existing user:', apiUser);
+        console.log('apiUser._id:', apiUser._id);
+        console.log('apiUser:', JSON.stringify(apiUser, null, 2));
       } catch (error) {
         // User doesn't exist in our system yet
         // Create a minimal user object from Supabase data
@@ -339,6 +332,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const user = convertApiUserToUser(apiUser, profiles);
+      console.log('Converted user object:', user);
+      console.log('User ID after conversion:', user.id);
 
       setState(prev => ({
         ...prev,
@@ -360,11 +355,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }));
     }
   };
-
-  // Save to sessionStorage whenever state changes
-  useEffect(() => {
-    sessionStorage.setItem('geetaOlympiadSession', JSON.stringify(state));
-  }, [state]);
 
   const login = async (email: string, otp: string): Promise<boolean> => {
     try {
@@ -498,7 +488,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sloganSubmissions: [],
       imageParts: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, collected: false })),
     }));
-    sessionStorage.removeItem('geetaOlympiadSession');
   };
 
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
