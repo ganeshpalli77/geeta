@@ -76,46 +76,74 @@ router.get('/questions/:quizType', async (req, res) => {
     const questionDb = client.db('questiondatabase');
     const collection = questionDb.collection('english');
 
+    console.log(`📋 Fetching ${quizType} questions:`, config);
+    console.log(`   Easy: ${config.easyCount}, Medium: ${config.mediumCount}, Hard: ${config.hardCount}`);
+
+    // Check total documents first
+    const totalDocs = await collection.countDocuments();
+    console.log(`📊 Total documents in collection: ${totalDocs}`);
+
     // Fetch questions by difficulty in parallel
+    // Note: Database uses "Difficulty" (capital D) field with values like "EASY", "MEDIUM", "HARD"
     const [easyQuestions, mediumQuestions, hardQuestions] = await Promise.all([
       collection
         .aggregate([
-          { $match: { difficulty: 'easy' } },
+          { $match: { Difficulty: { $regex: /^easy$/i } } },
           { $sample: { size: config.easyCount } },
         ])
         .toArray(),
       collection
         .aggregate([
-          { $match: { difficulty: 'medium' } },
+          { $match: { Difficulty: { $regex: /^medium$/i } } },
           { $sample: { size: config.mediumCount } },
         ])
         .toArray(),
       collection
         .aggregate([
-          { $match: { difficulty: 'hard' } },
+          { $match: { Difficulty: { $regex: /^hard$/i } } },
           { $sample: { size: config.hardCount } },
         ])
         .toArray(),
     ]);
 
+    console.log(`✅ Fetched: Easy=${easyQuestions.length}, Medium=${mediumQuestions.length}, Hard=${hardQuestions.length}`);
+
     // Combine and format questions
+    // Transform database structure to match frontend expectations
     const allQuestions = [
       ...easyQuestions,
       ...mediumQuestions,
       ...hardQuestions,
-    ].map(q => ({
-      id: q._id.toString(),
-      question: q.question,
-      questionHi: q.questionHi || q.question,
-      options: q.options,
-      optionsHi: q.optionsHi || q.options,
-      correctAnswer: q.correctAnswer,
-      difficulty: q.difficulty,
-      category: q.category || 'General',
-    }));
+    ].map(q => {
+      // Convert letter answer (A, B, C, D) to index (0, 1, 2, 3)
+      const answerMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+      const correctAnswerLetter = q['Correct Answer']?.trim().toUpperCase();
+      const correctAnswerIndex = answerMap[correctAnswerLetter] ?? 0;
+      
+      // Build options array from separate fields
+      const options = [
+        q['Option A'] || '',
+        q['Option B'] || '',
+        q['Option C'] || '',
+        q['Option D'] || '',
+      ];
+      
+      return {
+        id: q._id.toString(),
+        question: q.Question || '',
+        questionHi: q.Question || '', // Use same for now, add Hindi later if available
+        options: options,
+        optionsHi: options, // Use same for now
+        correctAnswer: correctAnswerIndex,
+        difficulty: (q.Difficulty || 'medium').toLowerCase(),
+        category: q.Category || 'General',
+      };
+    });
 
     // Shuffle questions
     const shuffled = allQuestions.sort(() => Math.random() - 0.5);
+
+    console.log(`🎯 Sending ${shuffled.length} questions for ${quizType}`);
 
     res.json({
       success: true,
@@ -145,9 +173,9 @@ router.get('/stats', async (req, res) => {
 
     const [total, easy, medium, hard] = await Promise.all([
       collection.countDocuments(),
-      collection.countDocuments({ difficulty: 'easy' }),
-      collection.countDocuments({ difficulty: 'medium' }),
-      collection.countDocuments({ difficulty: 'hard' }),
+      collection.countDocuments({ Difficulty: { $regex: /^easy$/i } }),
+      collection.countDocuments({ Difficulty: { $regex: /^medium$/i } }),
+      collection.countDocuments({ Difficulty: { $regex: /^hard$/i } }),
     ]);
 
     res.json({
@@ -185,9 +213,9 @@ router.get('/validate/:quizType', async (req, res) => {
     const collection = questionDb.collection('english');
 
     const [easy, medium, hard] = await Promise.all([
-      collection.countDocuments({ difficulty: 'easy' }),
-      collection.countDocuments({ difficulty: 'medium' }),
-      collection.countDocuments({ difficulty: 'hard' }),
+      collection.countDocuments({ Difficulty: { $regex: /^easy$/i } }),
+      collection.countDocuments({ Difficulty: { $regex: /^medium$/i } }),
+      collection.countDocuments({ Difficulty: { $regex: /^hard$/i } }),
     ]);
 
     let valid = true;

@@ -13,16 +13,29 @@ export async function getQuizQuestions(
   quizType: 'daily' | 'mock' | 'quiz1' | 'quiz2' | 'quiz3'
 ): Promise<QuizQuestion[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/quiz/questions/${quizType}`);
+    const url = `${API_BASE_URL}/quiz/questions/${quizType}`;
+    console.log('🔄 Fetching questions from:', url);
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API Error:', response.status, errorText);
       throw new Error(`Failed to fetch quiz questions: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('✅ Received data:', data);
+    console.log('📊 Questions count:', data.questions?.length || 0);
+    
+    if (!data.questions || data.questions.length === 0) {
+      console.warn('⚠️ No questions returned from API');
+      return []; // Return empty array instead of throwing error
+    }
+    
     return data.questions;
   } catch (error) {
-    console.error('Error fetching quiz questions:', error);
+    console.error('❌ Error fetching quiz questions:', error);
     throw error;
   }
 }
