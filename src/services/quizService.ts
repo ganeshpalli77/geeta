@@ -9,9 +9,9 @@ export interface QuizQuestion {
   id: string;
   _id?: string;
   question: string;
-  questionHi?: string;
+  questionHi: string;
   options: string[];
-  optionsHi?: string[];
+  optionsHi: string[];
   correctAnswer: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
@@ -35,27 +35,27 @@ export const QUIZ_CONFIGS: Record<string, QuizConfig> = {
     hardCount: 1,
   },
   mock: {
-    totalQuestions: 10,
-    easyCount: 5,
-    mediumCount: 3,
-    hardCount: 2,
+    totalQuestions: 30,
+    easyCount: 10,
+    mediumCount: 15,
+    hardCount: 5,
   },
   quiz1: {
     totalQuestions: 30,
     easyCount: 10,
-    mediumCount: 12,
-    hardCount: 8,
+    mediumCount: 15,
+    hardCount: 5,
   },
   quiz2: {
-    totalQuestions: 30,
-    easyCount: 8,
-    mediumCount: 12,
+    totalQuestions: 40,
+    easyCount: 10,
+    mediumCount: 20,
     hardCount: 10,
   },
   quiz3: {
-    totalQuestions: 30,
-    easyCount: 5,
-    mediumCount: 10,
+    totalQuestions: 50,
+    easyCount: 15,
+    mediumCount: 20,
     hardCount: 15,
   },
 };
@@ -99,6 +99,8 @@ async function fetchQuestionsByDifficulty(
       ...q,
       id: q._id?.toString() || Math.random().toString(36).substr(2, 9),
       category: q.category || 'General',
+      questionHi: q.questionHi || q.question,
+      optionsHi: q.optionsHi || q.options,
     }));
   } catch (error) {
     console.error(`Error fetching ${difficulty} questions:`, error);
@@ -223,6 +225,8 @@ export async function getQuestionsByCriteria(criteria: {
       ...q,
       id: q._id?.toString() || Math.random().toString(36).substr(2, 9),
       category: q.category || 'General',
+      questionHi: q.questionHi || q.question,
+      optionsHi: q.optionsHi || q.options,
     }));
   } catch (error) {
     console.error('Error fetching questions by criteria:', error);

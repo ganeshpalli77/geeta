@@ -1,0 +1,624 @@
+import { useState } from 'react';
+import { useApp } from '../../contexts/AppContext';
+import { Card } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { toast } from 'sonner';
+import {
+  Video,
+  MessageSquare,
+  Puzzle,
+  Send,
+  CheckCircle,
+  Film,
+  ArrowLeft,
+} from 'lucide-react';
+
+// Puzzle Task Page
+export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { currentProfile, imageParts, collectImagePart } = useApp();
+  const [collectedDays, setCollectedDays] = useState<Set<number>>(new Set());
+  
+  if (!currentProfile) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-8 text-center">
+          <Puzzle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h2 className="text-2xl text-gray-900 mb-2">No Profile Selected</h2>
+          <p className="text-gray-600">Please create or select a profile</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const totalPieces = 35;
+
+  // Create array of puzzle pieces (35 days) combining imageParts and local state
+  const puzzlePieces = Array.from({ length: totalPieces }, (_, i) => ({
+    id: i + 1,
+    collected: imageParts[i]?.collected || collectedDays.has(i + 1),
+  }));
+
+  const collectedParts = puzzlePieces.filter(p => p.collected).length;
+
+  const handleCollectPuzzlePiece = (dayNumber: number) => {
+    // Check if already collected
+    if (collectedDays.has(dayNumber) || imageParts[dayNumber - 1]?.collected) {
+      toast.info(`Day ${dayNumber} is already collected!`);
+      return;
+    }
+
+    // Add to collected days
+    setCollectedDays(prev => new Set([...prev, dayNumber]));
+    
+    // Also call the collect function for points
+    collectImagePart();
+    
+    toast.success(`🎉 Day ${dayNumber} collected! +50 credits`);
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="outline"
+        onClick={() => onNavigate?.('round-1')}
+        className="flex items-center gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Round 1
+      </Button>
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Collect Today's Puzzle Piece</h1>
+        <p className="text-gray-600">
+          Complete the 35-day challenge! Collect one puzzle piece every day to complete the Bhagavad Geeta image. Each piece earns you 50 credits!
+        </p>
+      </div>
+
+      {/* Main Card */}
+      <Card className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <Puzzle className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Daily Puzzle Collection</h2>
+            <p className="text-gray-600">{collectedParts} / {totalPieces} pieces collected</p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-gray-700">Your Progress</span>
+            <span className="text-sm font-semibold text-purple-600">{Math.round((collectedParts / totalPieces) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 h-3 rounded-full transition-all"
+              style={{ width: `${(collectedParts / totalPieces) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Puzzle Grid - Visual Representation */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">35 Days Challenge - Click any day to collect</h3>
+          <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-4 border-gray-300">
+            <div className="flex flex-wrap gap-3">
+              {puzzlePieces.map((piece) => (
+                <button
+                  key={piece.id}
+                  onClick={() => handleCollectPuzzlePiece(piece.id)}
+                  className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center font-bold transition-all flex-shrink-0 ${
+                    piece.collected
+                      ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-purple-600 text-white shadow-lg cursor-default'
+                      : 'bg-white border-gray-300 text-gray-400 hover:border-purple-400 hover:bg-purple-50 cursor-pointer transform hover:scale-105'
+                  }`}
+                  title={piece.collected ? `Day ${piece.id} collected` : `Click to collect Day ${piece.id}`}
+                  disabled={piece.collected}
+                >
+                  {piece.collected ? (
+                    <CheckCircle className="w-6 h-6" />
+                  ) : (
+                    <>
+                      <span className="text-[10px] leading-none">Day</span>
+                      <span className="text-sm font-bold leading-none mt-1">{piece.id}</span>
+                    </>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-6 mt-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-white border-2 border-gray-300"></div>
+              <span className="text-xs text-gray-600">Not Collected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <CheckCircle className="w-3 h-3 text-white" />
+              </div>
+              <span className="text-xs text-gray-600">Collected</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Completion Message */}
+        {collectedParts === totalPieces && (
+          <div className="text-center p-6 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
+            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-600" />
+            <h3 className="text-xl font-bold text-green-800 mb-2">35-Day Challenge Complete! 🎉</h3>
+            <p className="text-green-700">Congratulations! You've collected all {totalPieces} pieces!</p>
+          </div>
+        )}
+
+        {/* Info */}
+        <div className="p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💡 <strong>How to collect:</strong> Click on any day box to collect it. Once collected, it will turn purple with a checkmark ✓. Complete all 35 days to unlock the full Bhagavad Geeta artwork! Each day earns you 50 credits.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// Slogan Task Page
+export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { currentProfile, submitSlogan, sloganSubmissions } = useApp();
+  const [slogan, setSlogan] = useState('');
+
+  if (!currentProfile) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-8 text-center">
+          <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h2 className="text-2xl text-gray-900 mb-2">No Profile Selected</h2>
+          <p className="text-gray-600">Please create or select a profile</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const profileSlogans = sloganSubmissions.filter(s => s.profileId === currentProfile.id);
+
+  const handleSloganSubmit = () => {
+    if (!slogan || slogan.trim().length < 10) {
+      toast.error('Please enter a slogan (minimum 10 characters)');
+      return;
+    }
+
+    submitSlogan(slogan);
+    toast.success('Slogan submitted successfully! +75 credits awarded.');
+    setSlogan('');
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="outline"
+        onClick={() => onNavigate?.('round-1')}
+        className="flex items-center gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Round 1
+      </Button>
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create a Slogan</h1>
+        <p className="text-gray-600">
+          Create an inspiring slogan based on the teachings of the Bhagavad Geeta. Be creative and meaningful!
+        </p>
+      </div>
+
+      {/* Main Card */}
+      <Card className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <MessageSquare className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Slogan Creation</h2>
+            <p className="text-gray-600">Share your wisdom in a few words</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="slogan">Your Slogan</Label>
+            <Textarea
+              id="slogan"
+              placeholder="Enter your inspiring slogan here... (minimum 10 characters)"
+              value={slogan}
+              onChange={(e) => setSlogan(e.target.value)}
+              rows={4}
+              className="resize-none focus:ring-purple-600 focus:border-purple-600"
+            />
+            <p className="text-sm text-gray-500 mt-1">{slogan.length} characters</p>
+          </div>
+
+          <Button
+            onClick={handleSloganSubmit}
+            disabled={slogan.length < 10}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            size="lg"
+          >
+            <Send className="w-5 h-5 mr-2" />
+            Submit Slogan (+75 Credits)
+          </Button>
+        </div>
+
+        {/* Examples */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm font-semibold text-blue-900 mb-2">💡 Example Slogans:</p>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>"Do your duty without attachment to results"</li>
+            <li>"Be a warrior of peace, like Arjuna"</li>
+            <li>"Find your purpose, fulfill your dharma"</li>
+          </ul>
+        </div>
+      </Card>
+
+      {/* Previous Submissions */}
+      {profileSlogans.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Your Previous Submissions</h3>
+          <div className="space-y-3">
+            {profileSlogans.slice(-5).reverse().map((submission, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-gray-900 font-medium">{submission.text}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(submission.submittedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    submission.status === 'approved' ? 'bg-green-100 text-green-700' :
+                    submission.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {submission.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Reel Task Page
+export function ReelTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { currentProfile, submitVideo, videoSubmissions } = useApp();
+  const [reelURL, setReelURL] = useState('');
+  const [reelPlatform, setReelPlatform] = useState('youtube');
+
+  if (!currentProfile) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-8 text-center">
+          <Video className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h2 className="text-2xl text-gray-900 mb-2">No Profile Selected</h2>
+          <p className="text-gray-600">Please create or select a profile</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const profileReels = videoSubmissions.filter(v => v.profileId === currentProfile.id && v.type === 'reel');
+
+  const handleReelSubmit = () => {
+    if (!reelURL) {
+      toast.error('Please enter a reel URL');
+      return;
+    }
+
+    submitVideo({
+      profileId: currentProfile.id,
+      type: 'reel',
+      url: reelURL,
+      platform: reelPlatform,
+    });
+
+    toast.success('Reel submitted successfully! +100 credits awarded.');
+    setReelURL('');
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="outline"
+        onClick={() => onNavigate?.('round-1')}
+        className="flex items-center gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Round 1
+      </Button>
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create a Reel</h1>
+        <p className="text-gray-600">
+          Create a short video reel sharing your understanding of the Bhagavad Geeta. Upload to YouTube, Instagram, or Facebook and share the link here.
+        </p>
+      </div>
+
+      {/* Main Card */}
+      <Card className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <Video className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Reel Submission</h2>
+            <p className="text-gray-600">Share your creative video</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="platform">Platform</Label>
+            <Select value={reelPlatform} onValueChange={setReelPlatform}>
+              <SelectTrigger id="platform" className="focus:ring-purple-600">
+                <SelectValue placeholder="Select platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="youtube">YouTube</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="facebook">Facebook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="reel-url">Video URL</Label>
+            <Input
+              id="reel-url"
+              type="url"
+              placeholder="https://youtube.com/watch?v=..."
+              value={reelURL}
+              onChange={(e) => setReelURL(e.target.value)}
+              className="focus:ring-purple-600 focus:border-purple-600"
+            />
+          </div>
+
+          <Button
+            onClick={handleReelSubmit}
+            disabled={!reelURL}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            size="lg"
+          >
+            <Send className="w-5 h-5 mr-2" />
+            Submit Reel (+100 Credits)
+          </Button>
+        </div>
+
+        {/* Instructions */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm font-semibold text-blue-900 mb-2">📹 Video Guidelines:</p>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Keep it short: 30-60 seconds</li>
+            <li>Share a key teaching or your understanding</li>
+            <li>Be authentic and creative</li>
+            <li>Make sure the video is public</li>
+          </ul>
+        </div>
+      </Card>
+
+      {/* Previous Submissions */}
+      {profileReels.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Your Previous Submissions</h3>
+          <div className="space-y-3">
+            {profileReels.slice(-5).reverse().map((submission, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <a
+                      href={submission.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      {submission.url}
+                    </a>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {submission.platform} • {new Date(submission.submittedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    submission.status === 'approved' ? 'bg-green-100 text-green-700' :
+                    submission.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {submission.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Shloka Task Page
+export function ShlokaTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { currentProfile, submitVideo, videoSubmissions } = useApp();
+  const [shlokaURL, setShlokaURL] = useState('');
+  const [shlokaPlatform, setShlokaPlatform] = useState('youtube');
+
+  if (!currentProfile) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-8 text-center">
+          <Film className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h2 className="text-2xl text-gray-900 mb-2">No Profile Selected</h2>
+          <p className="text-gray-600">Please create or select a profile</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const profileShlokas = videoSubmissions.filter(v => v.profileId === currentProfile.id && v.type === 'shloka');
+
+  const handleShlokaSubmit = () => {
+    if (!shlokaURL) {
+      toast.error('Please enter a video URL');
+      return;
+    }
+
+    submitVideo({
+      profileId: currentProfile.id,
+      type: 'shloka',
+      url: shlokaURL,
+      platform: shlokaPlatform,
+    });
+
+    toast.success('Shloka video submitted successfully! +100 credits awarded.');
+    setShlokaURL('');
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="outline"
+        onClick={() => onNavigate?.('round-1')}
+        className="flex items-center gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Round 1
+      </Button>
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Shloka Video</h1>
+        <p className="text-gray-600">
+          Record yourself reciting a shloka from the Bhagavad Geeta. Upload to YouTube, Instagram, or Facebook and share the link here.
+        </p>
+      </div>
+
+      {/* Main Card */}
+      <Card className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <Film className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Shloka Video Submission</h2>
+            <p className="text-gray-600">Recite a verse from the Geeta</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="shloka-platform">Platform</Label>
+            <Select value={shlokaPlatform} onValueChange={setShlokaPlatform}>
+              <SelectTrigger id="shloka-platform" className="focus:ring-purple-600">
+                <SelectValue placeholder="Select platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="youtube">YouTube</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="facebook">Facebook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="shloka-url">Video URL</Label>
+            <Input
+              id="shloka-url"
+              type="url"
+              placeholder="https://youtube.com/watch?v=..."
+              value={shlokaURL}
+              onChange={(e) => setShlokaURL(e.target.value)}
+              className="focus:ring-purple-600 focus:border-purple-600"
+            />
+          </div>
+
+          <Button
+            onClick={handleShlokaSubmit}
+            disabled={!shlokaURL}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            size="lg"
+          >
+            <Send className="w-5 h-5 mr-2" />
+            Submit Shloka Video (+100 Credits)
+          </Button>
+        </div>
+
+        {/* Instructions */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm font-semibold text-blue-900 mb-2">🎬 Recording Guidelines:</p>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Choose any shloka from the Bhagavad Geeta</li>
+            <li>Recite clearly and with devotion</li>
+            <li>Video length: 1-2 minutes</li>
+            <li>Make sure the video is public</li>
+            <li>Optional: Add Sanskrit text or translation in video</li>
+          </ul>
+        </div>
+      </Card>
+
+      {/* Previous Submissions */}
+      {profileShlokas.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Your Previous Submissions</h3>
+          <div className="space-y-3">
+            {profileShlokas.slice(-5).reverse().map((submission, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <a
+                      href={submission.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      {submission.url}
+                    </a>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {submission.platform} • {new Date(submission.submittedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    submission.status === 'approved' ? 'bg-green-100 text-green-700' :
+                    submission.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {submission.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+

@@ -6,9 +6,10 @@ import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
-import { toast } from 'sonner@2.0.3';
-import { generateMixedQuiz, calculateScore } from '../../utils/quizData';
+import { toast } from 'sonner';
+import { calculateScore } from '../../utils/quizData';
 import { QuizQuestion } from '../../contexts/AppContext';
+import { getQuizQuestions } from '../../services/quizServiceAPI';
 import { AdventureCard } from './AdventureCard';
 import {
   BookOpen,
@@ -73,43 +74,51 @@ export function QuizPage() {
     }
   }, [quizStarted, timeRemaining]);
 
-  const startQuiz = (type: 'mock' | 'quiz1' | 'quiz2' | 'quiz3') => {
+  const startQuiz = async (type: 'mock' | 'quiz1' | 'quiz2' | 'quiz3') => {
     if (!currentProfile) {
       toast.error('Please create a profile first');
       return;
     }
 
-    // Generate questions based on quiz type
-    let quizQuestions: QuizQuestion[];
-    let duration: number;
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Loading quiz questions from database...');
 
-    switch (type) {
-      case 'mock':
-        quizQuestions = generateMixedQuiz(10, 15, 5); // 30 questions
-        duration = 30 * 60; // 30 minutes
-        break;
-      case 'quiz1':
-        quizQuestions = generateMixedQuiz(10, 15, 5); // 30 questions
-        duration = 30 * 60;
-        break;
-      case 'quiz2':
-        quizQuestions = generateMixedQuiz(10, 20, 10); // 40 questions
-        duration = 40 * 60;
-        break;
-      case 'quiz3':
-        quizQuestions = generateMixedQuiz(15, 20, 15); // 50 questions
-        duration = 50 * 60;
-        break;
+      // Fetch questions from database based on quiz type
+      const quizQuestions = await getQuizQuestions(type);
+      
+      // Set duration based on quiz type
+      let duration: number;
+      switch (type) {
+        case 'mock':
+          duration = 30 * 60; // 30 minutes
+          break;
+        case 'quiz1':
+          duration = 30 * 60; // 30 minutes
+          break;
+        case 'quiz2':
+          duration = 40 * 60; // 40 minutes
+          break;
+        case 'quiz3':
+          duration = 50 * 60; // 50 minutes
+          break;
+      }
+
+      setSelectedQuiz(type);
+      setQuestions(quizQuestions);
+      setCurrentQuestionIndex(0);
+      setAnswers({});
+      setTimeRemaining(duration);
+      setQuizStarted(true);
+      setShowResults(false);
+      setQuizInProgress(true); // Lock navigation
+      
+      toast.dismiss(loadingToast);
+      toast.success(`Quiz loaded with ${quizQuestions.length} questions!`);
+    } catch (error) {
+      console.error('Error loading quiz:', error);
+      toast.error('Failed to load quiz questions. Please try again.');
     }
-
-    setSelectedQuiz(type);
-    setQuestions(quizQuestions);
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    setTimeRemaining(duration);
-    setQuizStarted(true);
-    setShowResults(false);
-    setQuizInProgress(true); // Lock navigation
   };
 
   const handleAnswerChange = (questionId: string, answerIndex: string) => {

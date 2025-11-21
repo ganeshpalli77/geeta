@@ -205,14 +205,26 @@ export const authAPI = {
 
   // Admin login
   adminLogin: async (username: string, password: string): Promise<{ success: boolean }> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        return { success: true };
+    // When using backend API, call the backend
+    if (USE_BACKEND_API) {
+      try {
+        const response = await apiCall<{ success: boolean; message: string; admin?: any }>('/auth/admin-login', 'POST', {
+          username,
+          password,
+        });
+        return { success: response.success };
+      } catch (error) {
+        console.error('Backend admin login error:', error);
+        throw new Error('Invalid credentials');
       }
-      throw new Error('Invalid credentials');
     }
-    return apiCall('/auth/admin-login', 'POST', { username, password });
+    
+    // Fallback to local credentials check for mock/supabase mode
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      return { success: true };
+    }
+    throw new Error('Invalid credentials');
   },
 
   // Sign out (Supabase)
@@ -588,7 +600,10 @@ export const leaderboardAPI = {
 
       return entries;
     }
-    return apiCall(`/leaderboard/${type}`, 'GET');
+    
+    // Backend API call
+    const response = await apiCall<{ success: boolean; leaderboard: LeaderboardEntry[] }>(`/leaderboard/${type}`, 'GET');
+    return response.leaderboard;
   },
 
   // Get profile rank
@@ -601,7 +616,10 @@ export const leaderboardAPI = {
         totalParticipants: leaderboard.length,
       };
     }
-    return apiCall(`/leaderboard/rank/${profileId}`, 'GET');
+    
+    // Backend API call
+    const response = await apiCall<{ success: boolean; rank: number; totalParticipants: number }>(`/leaderboard/rank/${profileId}`, 'GET');
+    return { rank: response.rank, totalParticipants: response.totalParticipants };
   },
 };
 

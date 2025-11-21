@@ -121,7 +121,7 @@ export function ProfileSelectionPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400 font-semibold">Loading profiles...</p>
         </div>
       </div>
@@ -137,7 +137,7 @@ export function ProfileSelectionPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center max-w-2xl"
         >
-          <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-2xl">
+          <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-2xl">
             <User className="w-16 h-16 text-white" />
           </div>
           
@@ -158,7 +158,7 @@ export function ProfileSelectionPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateNew}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-4 px-10 rounded-xl shadow-2xl hover:from-orange-600 hover:to-pink-700 transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-4 px-10 rounded-xl shadow-2xl hover:from-purple-700 hover:to-purple-800 transition-colors text-lg"
           >
             <Plus className="w-6 h-6" />
             CREATE YOUR FIRST PROFILE
@@ -194,7 +194,7 @@ export function ProfileSelectionPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleCreateNew}
-            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-orange-600 hover:to-pink-700 transition-colors"
+            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
           >
             <Plus className="w-5 h-5" />
             ADD NEW PROFILE
@@ -320,7 +320,7 @@ export function ProfileSelectionPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="mt-6 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-orange-600 hover:to-pink-700 transition-colors"
+                  className="mt-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
                 >
                   + CREATE PROFILE
                 </motion.button>

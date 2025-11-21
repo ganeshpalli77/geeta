@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
 import { Mail, Phone, KeyRound } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
+import { API_BASE_URL } from '../../utils/config';
 
 interface AuthPageProps {
   mode?: 'login' | 'register';
@@ -28,6 +29,8 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
   const [phoneOTP, setPhoneOTP] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpSentTo, setOtpSentTo] = useState<{ email: boolean; phone: boolean }>({ email: false, phone: false });
 
@@ -428,45 +431,45 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
               </Button>
             </div>
           )}
-          </TabsContent>
+        </TabsContent>
 
-          <TabsContent value="admin" className="space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">{t('username')}</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('password')}</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
-                />
-              </div>
-              
-              <Button
-                onClick={handleAdminLogin}
-                disabled={loading}
-                className="w-full rounded-[25px]"
-                style={{ backgroundColor: '#D55328' }}
-              >
-                <KeyRound className="w-4 h-4 mr-2" />
-                {loading ? t('loading') : t('login')}
-              </Button>
+        <TabsContent value="admin" className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">{t('username')}</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
             </div>
-          </TabsContent>
-        </Tabs>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('password')}</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
+              />
+            </div>
+            
+            <Button
+              onClick={handleAdminLogin}
+              disabled={loading}
+              className="w-full rounded-[25px]"
+              style={{ backgroundColor: '#D55328' }}
+            >
+              <KeyRound className="w-4 h-4 mr-2" />
+              {loading ? t('loading') : t('login')}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
