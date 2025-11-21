@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   Film,
   ArrowLeft,
 } from 'lucide-react';
+import geetaImage from '../../assets/bhagavad-gita-complete.jpg';
 
 // Puzzle Task Page
 export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
@@ -126,10 +128,6 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
       console.log('Collect response:', data);
 
@@ -138,11 +136,12 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
         // Reload puzzle data
         await loadPuzzleData();
       } else {
-        toast.error(data.message || 'Failed to collect piece');
+        // Show the actual backend error message
+        toast.error(data.message || data.error || 'Failed to collect piece');
       }
     } catch (error) {
       console.error('Error collecting piece:', error);
-      toast.error('Failed to collect puzzle piece: ' + (error as Error).message);
+      toast.error('Network error: Please check your connection');
     } finally {
       setCollecting(false);
     }
@@ -194,75 +193,75 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
           </div>
         </div>
 
-        {/* Puzzle Image with Revealed Pieces */}
-        {puzzleConfig.imageData && (
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Your Progress - Image Reveal</h3>
-            <div className="relative w-full max-w-lg mx-auto">
-              <img
-                src={puzzleConfig.imageData}
-                alt="Puzzle"
-                className="w-full h-auto rounded-lg"
-                style={{
-                  filter: collectedParts === 0 ? 'blur(20px) brightness(0.3)' : 'none',
-                }}
-              />
-              {/* Overlay grid showing collected/uncollected pieces */}
-              <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(totalPieces))}, 1fr)` }}>
-                {puzzlePieces.map((piece) => (
-                  <div
-                    key={piece.id}
-                    className="border border-white/20"
-                    style={{
-                      backgroundColor: piece.collected ? 'transparent' : 'rgba(0, 0, 0, 0.7)',
-                      backdropFilter: piece.collected ? 'none' : 'blur(10px)',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Puzzle Grid - Collection Interface */}
+        {/* Puzzle Image with Checkboxes ON the Image Grid */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">{totalPieces} Days Challenge - Click to collect (1 per day)</h3>
-          <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-4 border-gray-300">
-            <div className="flex flex-wrap gap-3">
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">🖼️ Bhagavad Gita Philosophy - Complete the Image</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Check boxes ON the image to reveal pieces of the divine artwork. Complete all {totalPieces} pieces to see the full Bhagavad Gita scene!
+          </p>
+          <div className="relative w-full max-w-3xl mx-auto bg-gray-900 rounded-xl overflow-hidden shadow-2xl">
+            {/* Background Image */}
+            <img
+              src={geetaImage}
+              alt="Bhagavad Gita Philosophy"
+              className="w-full h-auto"
+              style={{
+                display: 'block',
+              }}
+            />
+            {/* Overlay grid with checkboxes - 7 columns x 5 rows = 35 pieces */}
+            <div 
+              className="absolute inset-0 grid gap-0"
+              style={{ 
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                gridTemplateRows: 'repeat(5, 1fr)'
+              }}
+            >
               {puzzlePieces.map((piece) => (
-                <button
+                <div
                   key={piece.id}
-                  onClick={() => handleCollectPuzzlePiece(piece.id)}
-                  className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center font-bold transition-all flex-shrink-0 ${
-                    piece.collected
-                      ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-purple-600 text-white shadow-lg cursor-default'
-                      : 'bg-white border-gray-300 text-gray-400 hover:border-purple-400 hover:bg-purple-50 cursor-pointer transform hover:scale-105'
-                  }`}
-                  title={piece.collected ? `Piece ${piece.id} collected` : `Click to collect Piece ${piece.id}`}
-                  disabled={piece.collected || collecting}
+                  className="relative border border-white/20 transition-all duration-500 flex items-center justify-center"
+                  style={{
+                    backgroundColor: piece.collected ? 'transparent' : '#D55328', // Solid orange for uncollected
+                    backdropFilter: 'none',
+                  }}
                 >
-                  {piece.collected ? (
-                    <CheckCircle className="w-6 h-6" />
-                  ) : (
-                    <>
-                      <span className="text-[10px] leading-none">Piece</span>
-                      <span className="text-sm font-bold leading-none mt-1">{piece.id}</span>
-                    </>
-                  )}
-                </button>
+                  {/* Checkbox directly on the image piece */}
+                  <div className="relative z-10 flex flex-col items-center gap-1">
+                    <Checkbox
+                      id={`piece-${piece.id}`}
+                      checked={piece.collected}
+                      onCheckedChange={() => handleCollectPuzzlePiece(piece.id)}
+                      disabled={piece.collected || collecting}
+                      className={`h-5 w-5 ${
+                        piece.collected 
+                          ? 'border-white bg-white data-[state=checked]:bg-white data-[state=checked]:text-purple-600' 
+                          : 'border-white bg-white/20 hover:bg-white/30'
+                      }`}
+                    />
+                    <label
+                      htmlFor={`piece-${piece.id}`}
+                      className={`text-xs font-bold cursor-pointer select-none ${
+                        piece.collected ? 'text-white drop-shadow-lg' : 'text-white'
+                      }`}
+                    >
+                      {piece.id}
+                    </label>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-center gap-6 mt-3">
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-white border-2 border-gray-300"></div>
-              <span className="text-xs text-gray-600">Not Collected</span>
+              <Checkbox disabled className="border-gray-400 h-4 w-4" />
+              <span className="text-sm text-gray-600">Not Collected</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <CheckCircle className="w-3 h-3 text-white" />
-              </div>
-              <span className="text-xs text-gray-600">Collected</span>
+              <Checkbox checked disabled className="border-purple-600 bg-purple-600 h-4 w-4" />
+              <span className="text-sm text-gray-600">Collected</span>
             </div>
           </div>
         </div>
@@ -277,9 +276,9 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
         )}
 
         {/* Info */}
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💡 <strong>How to collect:</strong> You can collect ONE piece per day. Click on any piece to collect it. Once collected, it will turn purple with a checkmark ✓ and reveal that part of the image. Complete all {totalPieces} pieces to see the full artwork! Each piece earns you {puzzleConfig.creditsPerPiece} credits.
+        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-900 leading-relaxed">
+            💡 <strong>How it works:</strong> Check ONE box per day to collect a piece and reveal that part of the divine image. Once checked, the piece will turn purple ✓ and unveil the corresponding section of the Bhagavad Gita scene. Complete all {totalPieces} pieces over {totalPieces} days to reveal the complete artwork! Each piece earns you <strong>{puzzleConfig.creditsPerPiece} credits</strong>.
           </p>
         </div>
       </Card>

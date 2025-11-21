@@ -83,19 +83,24 @@ export async function collectPuzzlePiece(db, userId, profileId, pieceNumber) {
     // Get today's date (YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
     
-    // Check if user already collected a piece today
-    const todayCollection = await collection.findOne({
-      userId,
-      profileId,
-      collectedDate: today,
-    });
+    // DEVELOPMENT MODE: Set PUZZLE_DEV_MODE=true in .env to bypass daily limit (for testing only)
+    const isDevelopmentMode = process.env.PUZZLE_DEV_MODE === 'true';
     
-    if (todayCollection) {
-      return {
-        success: false,
-        message: 'You have already collected a puzzle piece today!',
-        alreadyCollected: true,
-      };
+    // Check if user already collected a piece today (skip in dev mode)
+    if (!isDevelopmentMode) {
+      const todayCollection = await collection.findOne({
+        userId,
+        profileId,
+        collectedDate: today,
+      });
+      
+      if (todayCollection) {
+        return {
+          success: false,
+          message: 'You have already collected a puzzle piece today! Come back tomorrow 🗓️',
+          alreadyCollected: true,
+        };
+      }
     }
     
     // Check if this specific piece was already collected
