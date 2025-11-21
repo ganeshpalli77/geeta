@@ -1,14 +1,15 @@
 import express from 'express';
 import { ProfileModel } from '../models/Profile.js';
+import Referral from '../models/Referral.js';
 
 const router = express.Router();
 
 // Create a new profile
 router.post('/', async (req, res) => {
   try {
-    const { userId, name, prn, dob, preferredLanguage, category } = req.body;
+    const { userId, name, prn, dob, preferredLanguage, category, referralCode } = req.body;
 
-    console.log('Create profile request:', { userId, name, prn, dob, preferredLanguage, category });
+    console.log('Create profile request:', { userId, name, prn, dob, preferredLanguage, category, referralCode });
 
     if (!userId || !name || !prn || !dob || !preferredLanguage) {
       console.error('Missing required fields:', { userId: !!userId, name: !!name, prn: !!prn, dob: !!dob, preferredLanguage: !!preferredLanguage });
@@ -33,6 +34,19 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Validate referral code if provided
+    let referrerProfile = null;
+    if (referralCode && referralCode.trim()) {
+      referrerProfile = await Referral.findProfileByReferralCode(referralCode.trim());
+      if (!referrerProfile) {
+        console.log('Invalid referral code:', referralCode);
+        return res.status(400).json({
+          error: 'Invalid referral code'
+        });
+      }
+      console.log('Valid referral code from profile:', referrerProfile._id);
+    }
+
     const profile = await ProfileModel.createProfile({
       userId,
       name,
@@ -46,6 +60,25 @@ router.post('/', async (req, res) => {
     console.log('Profile _id:', profile._id);
     console.log('Profile _id type:', typeof profile._id);
 
+    // If referral code was used, create referral record and award credits
+    let referralCreated = false;
+    if (referrerProfile) {
+      try {
+        await Referral.create(
+          referrerProfile.userId,
+          referrerProfile._id.toString(),
+          referralCode.trim(),
+          userId,
+          profile._id.toString()
+        );
+        referralCreated = true;
+        console.log('Referral record created successfully');
+      } catch (referralError) {
+        console.error('Error creating referral record:', referralError);
+        // Continue anyway - don't fail profile creation due to referral issues
+      }
+    }
+
     res.status(201).json({
       success: true,
       profile: {
@@ -56,8 +89,10 @@ router.post('/', async (req, res) => {
         dob: profile.dob,
         preferredLanguage: profile.preferredLanguage,
         category: profile.category,
+        referralCode: profile.referralCode,
         createdAt: profile.createdAt,
       },
+      referralApplied: referralCreated,
     });
   } catch (error) {
     console.error('Create profile error:', error);
@@ -228,6 +263,67 @@ router.get('/user/:userId/count', async (req, res) => {
     console.error('Count profiles error:', error);
     res.status(500).json({ 
       error: 'Failed to count profiles',
+      message: error.message 
+    });
+  }
+});
+
+// Get referral stats for a profile
+router.get('/:profileId/referrals', async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const stats = await Referral.getReferralStats(profileId);
+
+    res.status(200).json({
+      success: true,
+      stats,
+    });
+  } catch (error) {
+    console.error('Get referral stats error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get referral stats',
+      message: error.message 
+    });
+  }
+});
+
+// Generate referral code for existing profiles (migration helper)
+router.post('/:profileId/generate-referral-code', async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const profile = await ProfileModel.findProfileById(profileId);
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    // Check if profile already has a referral code
+    if (profile.referralCode) {
+      return res.json({ 
+        success: true, 
+        referralCode: profile.referralCode,
+        message: 'Profile already has a referral code' 
+      });
+    }
+
+    // Generate referral code
+    const userPart = profile.userId.substring(0, 4).toUpperCase();
+    const profileIdStr = profile._id.toString();
+    const profilePart = profileIdStr.substring(profileIdStr.length - 4).toUpperCase();
+    const referralCode = `GEETA-${userPart}-${profilePart}`;
+
+    // Update profile with referral code
+    await ProfileModel.updateProfile(profileId, { referralCode });
+
+    res.json({
+      success: true,
+      referralCode,
+      message: 'Referral code generated successfully'
+    });
+  } catch (error) {
+    console.error('Generate referral code error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate referral code',
       message: error.message 
     });
   }

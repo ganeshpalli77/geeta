@@ -22,12 +22,26 @@ export class ProfileModel {
       preferredLanguage: profileData.preferredLanguage,
       category: profileData.category || null,
       isActive: isFirstProfile, // First profile is automatically active
+      referralCode: '', // Will be set after insertion
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     const result = await collection.insertOne(profile);
-    return { _id: result.insertedId, ...profile };
+    const profileId = result.insertedId.toString();
+    
+    // Generate unique referral code based on userId and profileId
+    const userPart = profileData.userId.substring(0, 4).toUpperCase();
+    const profilePart = profileId.substring(profileId.length - 4).toUpperCase();
+    const referralCode = `GEETA-${userPart}-${profilePart}`;
+    
+    // Update the profile with the referral code
+    await collection.updateOne(
+      { _id: result.insertedId },
+      { $set: { referralCode: referralCode } }
+    );
+    
+    return { _id: result.insertedId, ...profile, referralCode };
   }
 
   static async findProfileById(profileId) {

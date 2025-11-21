@@ -6,13 +6,15 @@ import { connectToDatabase } from './config/database.js';
 import usersRouter from './routes/users.js';
 import profilesRouter from './routes/profiles.js';
 import loginsRouter from './routes/logins.js';
-import emailUsersRouter from './routes/emailUsers.js';
-import phoneUsersRouter from './routes/phoneUsers.js';
+import pendingRegistrationsRouter from './routes/pendingRegistrations.js';
 import quizRouter from './routes/quiz.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import authRouter from './routes/auth.js';
 import { initializeDefaultAdmin } from './models/Admin.js';
 import { getDatabase } from './config/database.js';
+// OLD: Disabled - using unified users collection now
+// import emailUsersRouter from './routes/emailUsers.js';
+// import phoneUsersRouter from './routes/phoneUsers.js';
 
 dotenv.config();
 
@@ -37,11 +39,13 @@ app.get('/health', (req, res) => {
 app.use('/api/users', usersRouter);
 app.use('/api/profiles', profilesRouter);
 app.use('/api/logins', loginsRouter);
-app.use('/api/email-users', emailUsersRouter);
-app.use('/api/phone-users', phoneUsersRouter);
+app.use('/api/pending-registrations', pendingRegistrationsRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/auth', authRouter);
+// OLD: Disabled - using unified users collection now
+// app.use('/api/email-users', emailUsersRouter);
+// app.use('/api/phone-users', phoneUsersRouter);
 
 // 404 handler
 app.use((req, res) => {

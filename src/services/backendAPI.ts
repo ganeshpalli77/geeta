@@ -3,9 +3,16 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost
 
 export interface BackendUser {
   _id: string;
-  email?: string;
-  phone?: string;
+  userId?: string;
+  email: string;
+  phone: string;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  verifiedWith?: 'email' | 'phone' | null;
+  lastLogin?: string;
+  registeredAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface BackendProfile {
@@ -68,12 +75,30 @@ class BackendAPIService {
   }
 
   // User endpoints
-  async registerUser(data: { userId?: string; email?: string; phone?: string }): Promise<BackendUser> {
-    const response = await this.request<{ success: boolean; user: BackendUser }>(
+  async registerUser(data: {
+    userId?: string;
+    email: string;
+    phone: string;
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
+    verifiedWith?: 'email' | 'phone' | null;
+  }): Promise<{ user: BackendUser; message: string }> {
+    const response = await this.request<{ success: boolean; user: BackendUser; message: string }>(
       '/users/register',
       {
         method: 'POST',
         body: JSON.stringify(data),
+      }
+    );
+    return { user: response.user, message: response.message };
+  }
+
+  async verifyUser(userId: string, verificationType: 'email' | 'phone'): Promise<BackendUser> {
+    const response = await this.request<{ success: boolean; user: BackendUser; message: string }>(
+      '/users/verify',
+      {
+        method: 'POST',
+        body: JSON.stringify({ userId, verificationType }),
       }
     );
     return response.user;
