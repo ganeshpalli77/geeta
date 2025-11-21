@@ -59,9 +59,24 @@ async function startServer() {
     console.log('MongoDB connection established');
 
     // Start Express server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
+    });
+
+    // Handle port in use error
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`\n❌ Error: Port ${PORT} is already in use!`);
+        console.error('To fix this, you can:');
+        console.error('1. Kill the process using the port:');
+        console.error(`   lsof -ti :${PORT} | xargs kill -9`);
+        console.error('2. Or use a different port by setting PORT in your .env file\n');
+        process.exit(1);
+      } else {
+        console.error('Server error:', error);
+        process.exit(1);
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);

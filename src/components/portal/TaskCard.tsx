@@ -1,5 +1,4 @@
-import { ArrowRight, LucideIcon } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import { ChevronRight, Zap, LucideIcon } from 'lucide-react';
 import { cn } from '../ui/utils';
 
 interface TaskCardProps {
@@ -10,6 +9,7 @@ interface TaskCardProps {
   credits: number;
   onClick?: () => void;
   className?: string;
+  progress?: { current: number; total: number };
 }
 
 export function TaskCard({
@@ -20,60 +20,66 @@ export function TaskCard({
   credits,
   onClick,
   className,
+  progress,
 }: TaskCardProps) {
-  const Icon = typeof icon === 'string' ? null : icon;
-
-  const difficultyColors = {
-    Easy: 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-    Medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-    Hard: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
-  };
+  const iconEmoji = typeof icon === 'string' ? icon : '📖';
 
   return (
-    <button
+    <div
       onClick={onClick}
       className={cn(
-        "w-full p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900",
-        "hover:border-orange-300 dark:hover:border-orange-700 hover:shadow-md transition-all",
-        "text-left group",
+        "relative rounded-3xl p-5 bg-white border-[3px] border-purple-600 shadow-md flex flex-col h-full",
+        "hover:shadow-xl hover:border-purple-700 transition-all duration-300",
+        onClick && "cursor-pointer",
         className
       )}
     >
-      <div className="flex items-start gap-4">
-        {/* Icon */}
-        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-950/30 dark:to-orange-900/20 flex items-center justify-center flex-shrink-0">
-          {Icon ? (
-            <Icon className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-          ) : (
-            <span className="text-2xl">{icon}</span>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{description}</p>
-
-          {/* Badges */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {difficulty && (
-              <Badge variant="secondary" className={cn("text-xs px-2 py-0.5", difficultyColors[difficulty])}>
-                {difficulty}
-              </Badge>
-            )}
-            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">
-              {credits} Credits
-            </Badge>
-          </div>
-        </div>
-
-        {/* Arrow */}
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-orange-100 dark:group-hover:bg-orange-950/30 transition-colors">
-            <ArrowRight className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors" />
-          </div>
+      {/* Icon */}
+      <div className="flex items-center justify-start mb-4">
+        <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-3xl shadow-md">
+          {iconEmoji}
         </div>
       </div>
-    </button>
+
+      {/* Content */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-bold text-gray-900 text-base leading-tight">{title}</h3>
+          {onClick && (
+            <ChevronRight className="w-5 h-5 text-purple-500 shrink-0" />
+          )}
+        </div>
+        
+        <p className="text-gray-600 text-sm mb-3 leading-relaxed flex-1">{description}</p>
+
+        {/* Badges */}
+        {(difficulty || credits) && (
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {difficulty && (
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                <Zap className="w-3 h-3" />
+                {difficulty}
+              </div>
+            )}
+            {credits && (
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                <span>💎</span>
+                +{credits} credits
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Progress */}
+        {progress && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-600">Progress</span>
+            <span className="text-sm font-bold text-purple-600">
+              {progress.current}/{progress.total}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
