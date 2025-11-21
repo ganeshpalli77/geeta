@@ -27,6 +27,17 @@ export function ProfileSelectionPage() {
 
   // Initialize selected profile with current active profile
   useEffect(() => {
+    loadProfiles();
+  }, [user?.id]);
+
+  // Add refresh button handler
+  const handleRefresh = async () => {
+    console.log(' Manually refreshing profiles...');
+    await loadProfiles();
+    toast.success('Profiles refreshed!');
+  };
+
+  useEffect(() => {
     if (currentProfile?.id) {
       setSelectedProfileId(currentProfile.id);
     }
