@@ -9,6 +9,7 @@ import { RewardsPage } from './RewardsPage';
 import { NotificationsPage } from './NotificationsPage';
 import { ProfileNew } from './ProfileNew';
 import { NewQuizPage } from './NewQuizPage';
+import { DailyQuizPage } from './DailyQuizPage';
 import { EventsPage } from './EventsPage';
 import { SettingsPage } from './SettingsPage';
 import { ProfileSelectionPage } from './ProfileSelectionPage';
@@ -101,6 +102,8 @@ export function PortalLayout() {
         return <ProfileSelectionPage />;
       case 'quiz':
         return <NewQuizPage />;
+      case 'daily-quiz':
+        return <DailyQuizPage />;
       case 'events':
         return <EventsPage />;
       case 'puzzle-task':

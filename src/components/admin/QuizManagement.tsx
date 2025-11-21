@@ -1,9 +1,25 @@
+import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Card } from '../ui/card';
-import { BookOpen, TrendingUp, Award, Clock } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { BookOpen, TrendingUp, Award, Clock, Settings, Save, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { getQuizConfig, updateQuizConfig } from '../../services/dailyQuizService';
 
 export function QuizManagement() {
   const { quizAttempts } = useApp();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Quiz configuration state
+  const [config, setConfig] = useState({
+    dailyQuizQuestionCount: 10,
+    easyPercentage: 40,
+    mediumPercentage: 40,
+    hardPercentage: 20,
+  });
 
   const usersData = localStorage.getItem('geetaOlympiadUsers');
   const users = usersData ? JSON.parse(usersData) : [];
@@ -29,12 +45,233 @@ export function QuizManagement() {
     quiz3: quizAttempts.filter(q => q.type === 'quiz3'),
   };
 
+  // Load quiz configuration on mount
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const loadConfig = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedConfig = await getQuizConfig();
+      setConfig(fetchedConfig);
+    } catch (error) {
+      console.error('Error loading config:', error);
+      toast.error('Failed to load quiz configuration');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    // Validate percentages
+    const total = config.easyPercentage + config.mediumPercentage + config.hardPercentage;
+    if (total !== 100) {
+      toast.error('Percentages must add up to 100%');
+      return;
+    }
+
+    if (config.dailyQuizQuestionCount < 5 || config.dailyQuizQuestionCount > 50) {
+      toast.error('Question count must be between 5 and 50');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateQuizConfig(config);
+      toast.success('Quiz configuration updated successfully!');
+    } catch (error) {
+      console.error('Error saving config:', error);
+      toast.error('Failed to update quiz configuration');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleConfigChange = (field: string, value: number) => {
+    setConfig(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const calculateDistribution = () => {
+    const total = config.dailyQuizQuestionCount;
+    const easy = Math.round((total * config.easyPercentage) / 100);
+    const medium = Math.round((total * config.mediumPercentage) / 100);
+    const hard = total - easy - medium;
+    return { easy, medium, hard };
+  };
+
+  const distribution = calculateDistribution();
+
   return (
     <div className="space-y-6">
+      {/* Daily Quiz Configuration */}
+      <Card className="p-6">
+        <h2 className="text-2xl text-[#193C77] mb-6 flex items-center gap-2">
+          <Settings className="w-6 h-6" />
+          Daily Quiz Configuration
+        </h2>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Configuration Form */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="questionCount" className="text-[#193C77]">
+                Number of Questions per Daily Quiz
+              </Label>
+              <Input
+                id="questionCount"
+                type="number"
+                min="5"
+                max="50"
+                value={config.dailyQuizQuestionCount}
+                onChange={(e) => handleConfigChange('dailyQuizQuestionCount', parseInt(e.target.value) || 10)}
+                className="mt-2"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">Range: 5-50 questions</p>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[#193C77]">Difficulty Distribution (%)</Label>
+              
+              <div>
+                <Label htmlFor="easyPercent" className="text-sm text-gray-600">
+                  Easy Questions
+                </Label>
+                <Input
+                  id="easyPercent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={config.easyPercentage}
+                  onChange={(e) => handleConfigChange('easyPercentage', parseInt(e.target.value) || 0)}
+                  className="mt-1"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="mediumPercent" className="text-sm text-gray-600">
+                  Medium Questions
+                </Label>
+                <Input
+                  id="mediumPercent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={config.mediumPercentage}
+                  onChange={(e) => handleConfigChange('mediumPercentage', parseInt(e.target.value) || 0)}
+                  className="mt-1"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="hardPercent" className="text-sm text-gray-600">
+                  Hard Questions
+                </Label>
+                <Input
+                  id="hardPercent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={config.hardPercentage}
+                  onChange={(e) => handleConfigChange('hardPercentage', parseInt(e.target.value) || 0)}
+                  className="mt-1"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="text-sm">
+                Total: <span className={`font-bold ${
+                  config.easyPercentage + config.mediumPercentage + config.hardPercentage === 100
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }`}>
+                  {config.easyPercentage + config.mediumPercentage + config.hardPercentage}%
+                </span>
+                {config.easyPercentage + config.mediumPercentage + config.hardPercentage !== 100 && (
+                  <span className="text-red-600 ml-2">(Must equal 100%)</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleSaveConfig}
+                disabled={isSaving || isLoading}
+                className="flex-1 rounded-[25px]"
+                style={{ backgroundColor: '#D55328' }}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save Configuration'}
+              </Button>
+              <Button
+                onClick={loadConfig}
+                disabled={isLoading}
+                variant="outline"
+                className="rounded-[25px]"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="bg-[#FFF8ED] p-6 rounded-xl">
+            <h3 className="text-lg text-[#193C77] mb-4 font-semibold">Question Distribution Preview</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                <span className="text-sm text-gray-600">Total Questions:</span>
+                <span className="text-2xl font-bold text-[#822A12]">{config.dailyQuizQuestionCount}</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div>
+                    <div className="text-sm font-semibold text-green-700">Easy</div>
+                    <div className="text-xs text-gray-600">{config.easyPercentage}%</div>
+                  </div>
+                  <div className="text-xl font-bold text-green-700">{distribution.easy}</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div>
+                    <div className="text-sm font-semibold text-yellow-700">Medium</div>
+                    <div className="text-xs text-gray-600">{config.mediumPercentage}%</div>
+                  </div>
+                  <div className="text-xl font-bold text-yellow-700">{distribution.medium}</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div>
+                    <div className="text-sm font-semibold text-red-700">Hard</div>
+                    <div className="text-xs text-gray-600">{config.hardPercentage}%</div>
+                  </div>
+                  <div className="text-xl font-bold text-red-700">{distribution.hard}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-700">
+                  <strong>Note:</strong> All users will receive the same questions for each day. 
+                  Questions are randomly selected using a date-based seed to ensure consistency.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Quiz Statistics */}
       <Card className="p-6">
         <h2 className="text-2xl text-[#193C77] mb-6 flex items-center gap-2">
           <BookOpen className="w-6 h-6" />
-          Quiz Management
+          Quiz Statistics
         </h2>
 
         {/* Statistics */}

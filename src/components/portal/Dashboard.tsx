@@ -228,7 +228,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       difficulty: 'Easy' as const,
       credits: 100,
       progress: { current: 0, total: 1 },
-      onClick: () => setShowQuizDialog(true),
+      onClick: () => onNavigate?.('daily-quiz'),
     },
     {
       icon: '🧩',

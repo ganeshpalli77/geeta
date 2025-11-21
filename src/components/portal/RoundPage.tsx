@@ -396,7 +396,7 @@ export function Round1Page({ onNavigate }: { onNavigate?: (page: string) => void
       description: 'Complete today\'s daily quiz challenge',
       difficulty: 'Easy' as const,
       credits: 100,
-      onClick: () => setShowQuizDialog(true),
+      onClick: () => onNavigate?.('daily-quiz'),
     },
     {
       icon: '🧩',

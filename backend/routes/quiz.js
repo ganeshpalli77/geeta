@@ -1,6 +1,7 @@
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import { getQuizConfig, updateQuizConfig, calculateQuestionDistribution } from '../models/QuizConfig.js';
 
 dotenv.config();
 
@@ -241,6 +242,231 @@ router.get('/validate/:quizType', async (req, res) => {
     console.error('Error validating questions:', error);
     res.status(500).json({ 
       error: 'Failed to validate questions',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * Seeded random number generator for consistent daily questions
+ */
+function seededRandom(seed) {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+}
+
+/**
+ * Shuffle array with seed for consistent results
+ */
+function seededShuffle(array, seed) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom(seed + i) * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/**
+ * Get today's date as seed (YYYYMMDD format)
+ */
+function getTodaySeed() {
+  const now = new Date();
+  return parseInt(
+    now.getFullYear().toString() +
+    (now.getMonth() + 1).toString().padStart(2, '0') +
+    now.getDate().toString().padStart(2, '0')
+  );
+}
+
+/**
+ * GET /api/quiz/daily-questions
+ * Fetch daily quiz questions - same questions for all users on the same day
+ */
+router.get('/daily-questions', async (req, res) => {
+  try {
+    // Ensure MongoDB connection
+    await ensureConnection();
+    const geetaDb = client.db('geetaOlympiad');
+    const questionDb = client.db('questiondatabase');
+    const collection = questionDb.collection('english');
+
+    // Get quiz configuration
+    const config = await getQuizConfig(geetaDb);
+    const distribution = calculateQuestionDistribution(config);
+
+    console.log(`📋 Fetching daily quiz questions with config:`, distribution);
+
+    // Get today's seed for consistent question selection
+    const todaySeed = getTodaySeed();
+    console.log(`🌱 Using seed: ${todaySeed} for today's quiz`);
+
+    // Fetch ALL questions by difficulty
+    const [allEasyQuestions, allMediumQuestions, allHardQuestions] = await Promise.all([
+      collection
+        .find({ Difficulty: { $regex: /^easy$/i } })
+        .toArray(),
+      collection
+        .find({ Difficulty: { $regex: /^medium$/i } })
+        .toArray(),
+      collection
+        .find({ Difficulty: { $regex: /^hard$/i } })
+        .toArray(),
+    ]);
+
+    console.log(`📊 Available questions: Easy=${allEasyQuestions.length}, Medium=${allMediumQuestions.length}, Hard=${allHardQuestions.length}`);
+
+    // Check if we have enough questions
+    const availableTotal = allEasyQuestions.length + allMediumQuestions.length + allHardQuestions.length;
+    if (availableTotal < distribution.totalQuestions) {
+      console.warn(`⚠️ Not enough questions in database! Requested: ${distribution.totalQuestions}, Available: ${availableTotal}`);
+    }
+
+    // Use seeded shuffle to get consistent questions for today
+    const shuffledEasy = seededShuffle(allEasyQuestions, todaySeed);
+    const shuffledMedium = seededShuffle(allMediumQuestions, todaySeed + 1000);
+    const shuffledHard = seededShuffle(allHardQuestions, todaySeed + 2000);
+
+    // Select required number of questions (or all available if not enough)
+    let selectedEasy = shuffledEasy.slice(0, Math.min(distribution.easyCount, shuffledEasy.length));
+    let selectedMedium = shuffledMedium.slice(0, Math.min(distribution.mediumCount, shuffledMedium.length));
+    let selectedHard = shuffledHard.slice(0, Math.min(distribution.hardCount, shuffledHard.length));
+
+    // If we don't have enough medium/hard, fill with easy questions
+    const totalSelected = selectedEasy.length + selectedMedium.length + selectedHard.length;
+    if (totalSelected < distribution.totalQuestions && shuffledEasy.length > selectedEasy.length) {
+      const needed = distribution.totalQuestions - totalSelected;
+      const additionalEasy = shuffledEasy.slice(selectedEasy.length, selectedEasy.length + needed);
+      selectedEasy = [...selectedEasy, ...additionalEasy];
+      console.log(`ℹ️ Added ${additionalEasy.length} more easy questions to reach target count`);
+    }
+
+    console.log(`✅ Selected: Easy=${selectedEasy.length}, Medium=${selectedMedium.length}, Hard=${selectedHard.length}`);
+
+    // Combine and format questions
+    const allQuestions = [
+      ...selectedEasy,
+      ...selectedMedium,
+      ...selectedHard,
+    ].map(q => {
+      // Convert letter answer (A, B, C, D) to index (0, 1, 2, 3)
+      const answerMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+      const correctAnswerLetter = q['Correct Answer']?.trim().toUpperCase();
+      const correctAnswerIndex = answerMap[correctAnswerLetter] ?? 0;
+      
+      // Build options array from separate fields
+      const options = [
+        q['Option A'] || '',
+        q['Option B'] || '',
+        q['Option C'] || '',
+        q['Option D'] || '',
+      ];
+      
+      return {
+        id: q._id.toString(),
+        question: q.Question || '',
+        questionHi: q['Question (Hindi)'] || q.Question || '', // Use Hindi field if available
+        options: options,
+        optionsHi: [
+          q['Option A (Hindi)'] || q['Option A'] || '',
+          q['Option B (Hindi)'] || q['Option B'] || '',
+          q['Option C (Hindi)'] || q['Option C'] || '',
+          q['Option D (Hindi)'] || q['Option D'] || '',
+        ],
+        correctAnswer: correctAnswerIndex,
+        difficulty: (q.Difficulty || 'medium').toLowerCase(),
+        category: q.Category || 'General',
+      };
+    });
+
+    // Shuffle the combined questions with seed for consistent order
+    const finalQuestions = seededShuffle(allQuestions, todaySeed + 3000);
+
+    console.log(`🎯 Sending ${finalQuestions.length} daily quiz questions`);
+
+    res.json({
+      success: true,
+      questions: finalQuestions,
+      count: finalQuestions.length,
+      date: new Date().toISOString().split('T')[0],
+      seed: todaySeed,
+    });
+  } catch (error) {
+    console.error('Error fetching daily quiz questions:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch daily quiz questions',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /api/quiz/config
+ * Get quiz configuration
+ */
+router.get('/config', async (req, res) => {
+  try {
+    await ensureConnection();
+    const geetaDb = client.db('geetaOlympiad');
+    const config = await getQuizConfig(geetaDb);
+    
+    res.json({
+      success: true,
+      config: {
+        dailyQuizQuestionCount: config.dailyQuizQuestionCount,
+        easyPercentage: config.easyPercentage,
+        mediumPercentage: config.mediumPercentage,
+        hardPercentage: config.hardPercentage,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching quiz config:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch quiz config',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * PUT /api/quiz/config
+ * Update quiz configuration (admin only)
+ */
+router.put('/config', async (req, res) => {
+  try {
+    const { dailyQuizQuestionCount, easyPercentage, mediumPercentage, hardPercentage } = req.body;
+
+    // Validate input
+    if (!dailyQuizQuestionCount || dailyQuizQuestionCount < 5 || dailyQuizQuestionCount > 50) {
+      return res.status(400).json({ 
+        error: 'Invalid question count. Must be between 5 and 50.' 
+      });
+    }
+
+    if (easyPercentage + mediumPercentage + hardPercentage !== 100) {
+      return res.status(400).json({ 
+        error: 'Percentages must add up to 100' 
+      });
+    }
+
+    await ensureConnection();
+    const geetaDb = client.db('geetaOlympiad');
+    
+    await updateQuizConfig(geetaDb, {
+      dailyQuizQuestionCount,
+      easyPercentage,
+      mediumPercentage,
+      hardPercentage,
+    });
+
+    res.json({
+      success: true,
+      message: 'Quiz configuration updated successfully',
+    });
+  } catch (error) {
+    console.error('Error updating quiz config:', error);
+    res.status(500).json({ 
+      error: 'Failed to update quiz config',
       message: error.message 
     });
   }
