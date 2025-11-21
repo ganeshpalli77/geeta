@@ -14,6 +14,7 @@ import pendingRegistrationsRouter from './routes/pendingRegistrations.js';
 import quizRouter from './routes/quiz.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import authRouter from './routes/auth.js';
+import puzzleRouter from './routes/puzzle.js';
 import { initializeDefaultAdmin } from './models/Admin.js';
 import { getDatabase } from './config/database.js';
 
@@ -181,6 +182,9 @@ app.use('/api/leaderboard',
 
 // Auth routes - no caching, strict rate limiting
 app.use('/api/auth', authRouter);
+
+// Puzzle routes
+app.use('/api/puzzle', puzzleRouter);
 
 // ============================================================================
 // ERROR HANDLERS

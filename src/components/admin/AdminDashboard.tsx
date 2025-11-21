@@ -11,12 +11,14 @@ import {
   Trophy,
   Settings,
   TrendingUp,
+  Puzzle,
 } from 'lucide-react';
 import { AdminStats } from './AdminStats';
 import { UserManagement } from './UserManagement';
 import { SubmissionReview } from './SubmissionReview';
 import { QuizManagement } from './QuizManagement';
 import { LeaderboardManagement } from './LeaderboardManagement';
+import { PuzzleManagement } from './PuzzleManagement';
 
 export function AdminDashboard() {
   const { videoSubmissions, sloganSubmissions, quizAttempts } = useApp();
@@ -87,7 +89,7 @@ export function AdminDashboard() {
       {/* Main Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-6 md:mb-8">
-          <TabsList className="inline-flex md:grid w-auto md:w-full md:grid-cols-5 md:max-w-4xl">
+          <TabsList className="inline-flex md:grid w-auto md:w-full md:grid-cols-6 md:max-w-5xl">
             <TabsTrigger value="overview" className="whitespace-nowrap text-xs md:text-sm">
               <BarChart className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
               Overview
@@ -103,6 +105,10 @@ export function AdminDashboard() {
             <TabsTrigger value="quiz" className="whitespace-nowrap text-xs md:text-sm">
               <BookOpen className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
               Quiz
+            </TabsTrigger>
+            <TabsTrigger value="puzzle" className="whitespace-nowrap text-xs md:text-sm">
+              <Puzzle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+              Puzzle
             </TabsTrigger>
             <TabsTrigger value="leaderboard" className="whitespace-nowrap text-xs md:text-sm">
               <Trophy className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
@@ -125,6 +131,10 @@ export function AdminDashboard() {
 
         <TabsContent value="quiz" className="mt-4 md:mt-6">
           <QuizManagement />
+        </TabsContent>
+
+        <TabsContent value="puzzle" className="mt-4 md:mt-6">
+          <PuzzleManagement />
         </TabsContent>
 
         <TabsContent value="leaderboard" className="mt-4 md:mt-6">
