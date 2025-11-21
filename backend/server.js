@@ -8,6 +8,7 @@ import profilesRouter from './routes/profiles.js';
 import loginsRouter from './routes/logins.js';
 import emailUsersRouter from './routes/emailUsers.js';
 import phoneUsersRouter from './routes/phoneUsers.js';
+import quizRouter from './routes/quiz.js';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api/profiles', profilesRouter);
 app.use('/api/logins', loginsRouter);
 app.use('/api/email-users', emailUsersRouter);
 app.use('/api/phone-users', phoneUsersRouter);
+app.use('/api/quiz', quizRouter);
 
 // 404 handler
 app.use((req, res) => {
