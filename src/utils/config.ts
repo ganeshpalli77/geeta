@@ -4,6 +4,8 @@
  * This file centralizes all configuration settings for the application.
  */
 
+/// <reference types="vite/client" />
+
 import { ADMIN_CONFIG } from './adminConfig';
 
 // ============================================================================
@@ -11,17 +13,23 @@ import { ADMIN_CONFIG } from './adminConfig';
 // ============================================================================
 
 /**
+ * Authentication Mode Type
+ */
+export type AuthMode = 'mock' | 'supabase' | 'nodejs';
+
+/**
  * Authentication Mode
  * 
  * - 'mock': Uses localStorage for data persistence with demo OTP (1234)
  * - 'supabase': Uses Supabase Auth Hooks for real authentication
+ * - 'nodejs': Uses Node.js backend for authentication
  * 
  * IMPORTANT: Before switching to 'supabase', ensure:
  * 1. Phone/Email provider is enabled in Supabase Dashboard
  * 2. Auth Hooks are properly configured (see SUPABASE_AUTH_HOOKS_GUIDE.md)
  * 3. Test with email OTP first (simpler setup)
  */
-export const AUTH_MODE: 'mock' | 'supabase' | 'nodejs'= 'nodejs';
+export const AUTH_MODE = 'nodejs' as AuthMode;
 
 /**
  * Supabase Configuration
@@ -46,7 +54,7 @@ export const SUPABASE_CONFIG = {
  * Backend API URL
  * Only used when implementing a custom backend
  */
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // ============================================================================
 // PHONE CONFIGURATION

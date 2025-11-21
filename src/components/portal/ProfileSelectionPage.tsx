@@ -1,16 +1,36 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, Plus, Crown, Star, Trophy, Zap } from 'lucide-react';
+import { User, Plus, Crown, Coins, Check, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { backendAPI, type BackendProfile } from '../../services/backendAPI';
 import { toast } from 'sonner';
 import { ProfileCreationForm } from './ProfileCreationForm';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '../ui/alert-dialog';
 
 export function ProfileSelectionPage() {
   const { user, switchProfile, currentProfile } = useApp();
   const [profiles, setProfiles] = useState<BackendProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState<BackendProfile | null>(null);
+
+  // Initialize selected profile with current active profile
+  useEffect(() => {
+    if (currentProfile?.id) {
+      setSelectedProfileId(currentProfile.id);
+    }
+  }, [currentProfile?.id]);
 
   useEffect(() => {
     if (user?.id) {
@@ -31,9 +51,15 @@ export function ProfileSelectionPage() {
       setLoading(true);
       const data = await backendAPI.getProfilesByUser(user.id);
       console.log('Loaded profiles:', data);
+      console.log('Current profile:', currentProfile);
       // Ensure data is an array
       const profilesArray = Array.isArray(data) ? data : [];
       setProfiles(profilesArray);
+      
+      // Set the active profile if it exists
+      if (currentProfile?.id) {
+        setSelectedProfileId(currentProfile.id);
+      }
       
       // Don't auto-show create form, let user click the button
       // This gives them a choice to see the empty state first
@@ -54,6 +80,9 @@ export function ProfileSelectionPage() {
   const handleSelectProfile = async (profileId: string) => {
     if (!user?.id) return;
     
+    // Set selected state immediately for visual feedback
+    setSelectedProfileId(profileId);
+    
     try {
       await backendAPI.setActiveProfile(user.id, profileId);
       await switchProfile(profileId);
@@ -62,10 +91,11 @@ export function ProfileSelectionPage() {
       // Navigate to dashboard after successful selection
       setTimeout(() => {
         window.location.hash = '#dashboard';
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error('Error selecting profile:', error);
       toast.error('Failed to select profile');
+      setSelectedProfileId(null);
     }
   };
 
@@ -78,35 +108,62 @@ export function ProfileSelectionPage() {
     loadProfiles();
   };
 
-  // Color schemes for profile cards
+  const handleDeleteClick = (profile: BackendProfile, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setProfileToDelete(profile);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!profileToDelete || !user?.id) return;
+    
+    try {
+      await backendAPI.deleteProfile(profileToDelete._id);
+      toast.success('Profile deleted successfully!');
+      
+      // Reload profiles
+      await loadProfiles();
+      
+      // If deleted profile was active, clear selection
+      if (currentProfile?.id === profileToDelete._id) {
+        setSelectedProfileId(null);
+      }
+      
+      setShowDeleteDialog(false);
+      setProfileToDelete(null);
+    } catch (error) {
+      console.error('Error deleting profile:', error);
+      toast.error('Failed to delete profile');
+    }
+  };
+
+  // Color schemes for profile cards - professional gradients
   const colorSchemes = [
-    { bg: 'from-red-500 to-red-600', border: 'border-red-400', text: 'text-red-50' },
-    { bg: 'from-yellow-500 to-yellow-600', border: 'border-yellow-400', text: 'text-yellow-50' },
-    { bg: 'from-teal-500 to-teal-600', border: 'border-teal-400', text: 'text-teal-50' },
-    { bg: 'from-blue-500 to-blue-600', border: 'border-blue-400', text: 'text-blue-50' },
-    { bg: 'from-purple-500 to-purple-600', border: 'border-purple-400', text: 'text-purple-50' },
-    { bg: 'from-pink-500 to-pink-600', border: 'border-pink-400', text: 'text-pink-50' },
-    { bg: 'from-green-500 to-green-600', border: 'border-green-400', text: 'text-green-50' },
-    { bg: 'from-orange-500 to-orange-600', border: 'border-orange-400', text: 'text-orange-50' },
+    { bgGradient: 'linear-gradient(135deg, #FFE135 0%, #FFC635 100%)', text: 'text-gray-800', shadow: 'shadow-yellow-200' }, // Yellow Gradient
+    { bgGradient: 'linear-gradient(135deg, #FF7C35 0%, #FF5E35 100%)', text: 'text-gray-800', shadow: 'shadow-orange-200' }, // Orange Gradient
+    { bgGradient: 'linear-gradient(135deg, #70DBFF 0%, #50C5FF 100%)', text: 'text-gray-800', shadow: 'shadow-blue-200' },   // Blue Gradient
   ];
 
   const getColorScheme = (index: number) => {
     return colorSchemes[index % colorSchemes.length];
   };
 
+  // Mock coins data - would come from backend
+  const getCoins = () => Math.floor(Math.random() * 500);
+
   if (showCreateForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-12 px-4">
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => {
               setShowCreateForm(false);
               if (profiles.length === 0) {
-                // If no profiles, user must create one
                 toast.info('Please create a profile to continue');
               }
             }}
-            className="mb-6 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="mb-6 px-4 py-2 !bg-gray-500 hover:!bg-gray-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-semibold"
+            style={{ backgroundColor: '#6B7280' }}
             disabled={profiles.length === 0}
           >
             ← Back to Profiles
@@ -119,10 +176,10 @@ export function ProfileSelectionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-semibold">Loading profiles...</p>
+          <p className="text-gray-600 font-medium">Loading profiles...</p>
         </div>
       </div>
     );
@@ -131,37 +188,37 @@ export function ProfileSelectionPage() {
   // Show empty state if no profiles
   if (!loading && profiles.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center max-w-2xl"
         >
-          <div className="w-32 h-32 mx-auto mb-8 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-2xl">
-            <User className="w-16 h-16 text-white" />
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-purple-600 flex items-center justify-center shadow-lg">
+            <User className="w-12 h-12 text-white" />
           </div>
           
-          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
-            No Profiles Yet! 🎮
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            No Profiles Yet
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            Create your first warrior profile to begin your journey in the Elite Arena
+          <p className="text-lg text-gray-600 mb-8">
+            Create your first profile to get started
           </p>
           
           {user?.email && (
-            <p className="text-sm text-gray-500 dark:text-gray-500 mb-8">
+            <p className="text-sm text-gray-500 mb-8">
               Logged in as: {user.email || user.phone}
             </p>
           )}
           
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleCreateNew}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-4 px-10 rounded-xl shadow-2xl hover:from-purple-700 hover:to-purple-800 transition-colors text-lg"
+            className="inline-flex items-center gap-2 bg-black text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-900 hover:shadow-lg transition-all"
           >
-            <Plus className="w-6 h-6" />
-            CREATE YOUR FIRST PROFILE
+            <Plus className="w-5 h-5" />
+            Create Your First Profile
           </motion.button>
         </motion.div>
       </div>
@@ -169,181 +226,162 @@ export function ProfileSelectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header Bar */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="mb-8"
         >
-          <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4">
-            Select Your Warrior 🎮
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 font-semibold">
-            Choose a profile to enter the Elite Arena
-          </p>
-          {user?.email && (
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-              Logged in as: {user.email || user.phone}
+          {/* Title and Subtitle */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+              Select Your Profile
+            </h1>
+            <p className="text-base text-gray-600 font-normal">
+              Choose a profile to continue
             </p>
-          )}
-          
-          {/* Add Profile Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleCreateNew}
-            className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            ADD NEW PROFILE
-          </motion.button>
+            {user?.email && (
+              <p className="text-sm text-gray-500 mt-1">
+                {user.email || user.phone}
+              </p>
+            )}
+          </div>
         </motion.div>
 
         {/* Profile Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
           {profiles.map((profile, index) => {
             const colors = getColorScheme(index);
-            const isActive = currentProfile?.id === profile._id;
+            // Check if this profile is active using both currentProfile and selectedProfileId
+            const isActive = 
+              currentProfile?.id === profile._id || 
+              selectedProfileId === profile._id ||
+              currentProfile?.prn === profile.prn; // Also check by PRN as fallback
+            const coins = getCoins();
 
             return (
               <motion.div
                 key={profile._id}
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleSelectProfile(profile._id)}
+                transition={{ delay: index * 0.05 }}
                 className="cursor-pointer"
               >
-                <div className={`relative rounded-3xl bg-gradient-to-br ${colors.bg} p-8 shadow-2xl border-4 ${colors.border} overflow-hidden`}>
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0" style={{
-                      backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)',
-                      backgroundSize: '40px 40px'
-                    }} />
-                  </div>
-
-                  {/* Active Badge */}
+                <div 
+                  className={`relative rounded-2xl p-6 shadow-md hover:shadow-xl transition-all h-[200px] flex flex-col ${colors.shadow}`}
+                  style={{ backgroundImage: colors.bgGradient }}
+                >
+                  {/* Active Badge - Top Left */}
                   {isActive && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-lg"
-                    >
-                      <Crown className="w-4 h-4 text-yellow-600" />
-                      <span className="text-xs font-black text-gray-900">ACTIVE</span>
-                    </motion.div>
+                    <div className="absolute top-3 left-3 bg-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md border border-purple-200 z-10">
+                      <Crown className="w-3.5 h-3.5 text-purple-600" />
+                      <span className="text-xs font-bold text-purple-600">Active</span>
+                    </div>
                   )}
 
+                  {/* Delete Button - Top Right */}
+                  <button
+                    onClick={(e) => handleDeleteClick(profile, e)}
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/20 transition-all group z-20"
+                    title="Delete profile"
+                    style={{ right: '12px', top: '12px' }}
+                  >
+                    <Trash2 className="w-5 h-5 text-gray-700 group-hover:text-red-600 transition-colors drop-shadow-lg" />
+                  </button>
+
                   {/* Content */}
-                  <div className="relative z-10">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/50 dark:bg-gray-600/50 backdrop-blur-sm flex items-center justify-center text-4xl font-black text-gray-900">
-                      {profile.name.charAt(0).toUpperCase()}
+                  <div className="mb-4 flex items-center gap-3">
+                    {/* Profile Photo */}
+                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md border-2 border-white/50">
+                      <span className="text-2xl font-bold text-black">
+                        {profile.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-
-                    <h2 className={`text-3xl font-black mb-2 ${colors.text}`}>
-                      {profile.name}
-                    </h2>
-                    <p className={`text-sm font-semibold mb-4 ${colors.text} opacity-80`}>
-                      PRN: {profile.prn}
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2 mt-6">
-                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                        <Trophy className={`w-5 h-5 mx-auto mb-1 ${colors.text}`} />
-                        <p className={`text-xs font-bold ${colors.text}`}>Level 1</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                        <Star className={`w-5 h-5 mx-auto mb-1 ${colors.text}`} />
-                        <p className={`text-xs font-bold ${colors.text}`}>0 XP</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                        <Zap className={`w-5 h-5 mx-auto mb-1 ${colors.text}`} />
-                        <p className={`text-xs font-bold ${colors.text}`}>Rank -</p>
-                      </div>
+                    
+                    {/* Name and PRN */}
+                    <div className="flex-1 min-w-0">
+                      <h2 className={`text-xl font-bold mb-0.5 ${colors.text} truncate`}>
+                        {profile.name}
+                      </h2>
+                      <p className={`text-sm font-medium ${colors.text} opacity-70`}>
+                        PRN: {profile.prn}
+                      </p>
                     </div>
-
-                    {/* Select Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="mt-6 w-full bg-white/90 backdrop-blur-sm text-gray-900 font-black py-3 rounded-xl shadow-lg hover:bg-white transition-colors"
-                    >
-                      {isActive ? '✓ SELECTED' : 'SELECT WARRIOR'}
-                    </motion.button>
                   </div>
+
+                  {/* Coins */}
+                  <div className={`mb-4 flex items-center gap-2 ${colors.text}`}>
+                    <Coins className="w-4 h-4" />
+                    <span className="text-sm font-medium">Coins: {coins}</span>
+                  </div>
+
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-grow"></div>
+
+                  {/* Select Button */}
+                  <button
+                    onClick={() => handleSelectProfile(profile._id)}
+                    disabled={isActive}
+                    className="w-full !bg-black hover:!bg-gray-900 !text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all opacity-80 hover:opacity-100 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-100"
+                    style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
+                  >
+                    {isActive && <Check className="w-5 h-5" />}
+                    {isActive ? 'Profile Selected' : 'Select Profile'}
+                  </button>
                 </div>
               </motion.div>
             );
           })}
 
-          {/* Add New Profile Card */}
+          {/* Create New Profile Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: profiles.length * 0.1 }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            whileTap={{ scale: 0.95 }}
+            transition={{ delay: profiles.length * 0.05 }}
             onClick={handleCreateNew}
             className="cursor-pointer"
           >
-            <div className="relative rounded-3xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 p-8 shadow-2xl border-4 border-gray-400 dark:border-gray-600 overflow-hidden h-full flex items-center justify-center min-h-[400px]">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)',
-                  backgroundSize: '40px 40px'
-                }} />
+            <div className="relative rounded-2xl p-6 shadow-md hover:shadow-xl transition-all h-[200px] flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-300 hover:border-purple-500 hover:bg-purple-50/30">
+              <div className="w-16 h-16 rounded-full bg-purple-100 border-2 border-purple-200 flex items-center justify-center mb-4 shadow-sm">
+                <Plus className="w-8 h-8 text-purple-600" />
               </div>
-
-              {/* Content */}
-              <div className="relative z-10 text-center">
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-32 h-32 mx-auto mb-6 rounded-full bg-white/50 dark:bg-gray-600/50 backdrop-blur-sm border-4 border-dashed border-gray-400 dark:border-gray-500 flex items-center justify-center"
-                >
-                  <Plus className="w-16 h-16 text-gray-600 dark:text-gray-300" />
-                </motion.div>
-
-                <h2 className="text-3xl font-black text-gray-700 dark:text-gray-200 mb-2">
-                  Create New Warrior
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 font-semibold">
-                  Add another profile
-                </p>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mt-6 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-black py-3 px-8 rounded-xl shadow-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
-                >
-                  + CREATE PROFILE
-                </motion.button>
-              </div>
+              
+              <h2 className="text-lg font-bold text-gray-900 mb-1">
+                Create New Profile
+              </h2>
+              <p className="text-sm text-gray-600 text-center">
+                Add another profile
+              </p>
             </div>
           </motion.div>
-        </div>
 
-        {/* Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="max-w-2xl mx-auto text-center"
-        >
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-            <p className="text-gray-700 dark:text-gray-300 font-semibold">
-              <span className="text-2xl mr-2">ℹ️</span>
-              You can create multiple warrior profiles for the same account. Each profile has its own progress and achievements!
-            </p>
-          </div>
-        </motion.div>
+        </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Profile?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{profileToDelete?.name}</strong>? 
+              This action cannot be undone and all progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteProfile}
+              className="!bg-red-600 hover:!bg-red-700 !text-white"
+              style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}
+            >
+              Delete Profile
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

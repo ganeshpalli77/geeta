@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Trophy, Medal, Award, Share2, RefreshCw, Swords, Crown, Flame, Zap, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Share2, RefreshCw, Zap, Star } from 'lucide-react';
 import { cn } from '../ui/utils';
-import { Button } from '../ui/button';
 import { useApp } from '../../contexts/AppContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { motion } from 'motion/react';
 
-type LeaderboardTab = 'global' | 'school' | 'state' | 'weekly';
 
 interface LeaderboardEntry {
   rank: number;
@@ -31,7 +29,6 @@ export function LeaderboardNew() {
     user,
   } = useApp();
   
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('global');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Array of diverse profile pictures
@@ -52,12 +49,6 @@ export function LeaderboardNew() {
     return profilePictures[hash % profilePictures.length];
   };
 
-  const tabs: { id: LeaderboardTab; label: string; icon: any }[] = [
-    { id: 'global', label: 'Global Arena', icon: Trophy },
-    { id: 'school', label: 'Guild Wars', icon: Swords },
-    { id: 'state', label: 'Kingdom', icon: Crown },
-    { id: 'weekly', label: 'This Week', icon: Flame },
-  ];
 
   useEffect(() => {
     // Refresh leaderboard on mount
@@ -68,9 +59,9 @@ export function LeaderboardNew() {
     setIsRefreshing(true);
     try {
       await refreshLeaderboard();
-      toast.success('🔄 Battle rankings updated!');
+      toast.success('🔄 Leaderboard updated!');
     } catch (error) {
-      toast.error('Failed to refresh rankings');
+      toast.error('Failed to refresh leaderboard');
     } finally {
       setIsRefreshing(false);
     }
@@ -96,35 +87,14 @@ export function LeaderboardNew() {
     return name.charAt(0).toUpperCase();
   };
 
-  // Process leaderboard data based on active tab
+  // Process leaderboard data - show global rankings
   const getFilteredLeaderboard = (): LeaderboardEntry[] => {
     if (!leaderboard || leaderboard.length === 0) {
       return [];
     }
 
     let sortedLeaderboard = [...leaderboard];
-
-    switch (activeTab) {
-      case 'global':
-        sortedLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
-        break;
-      case 'school':
-        const currentCategory = currentProfile?.category;
-        if (currentCategory) {
-          sortedLeaderboard = sortedLeaderboard.filter(entry => {
-            const profile = user?.profiles?.find(p => p.id === entry.profileId);
-            return profile?.category === currentCategory;
-          });
-        }
-        sortedLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
-        break;
-      case 'state':
-        sortedLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
-        break;
-      case 'weekly':
-        sortedLeaderboard.sort((a, b) => (b.weeklyScore || 0) - (a.weeklyScore || 0));
-        break;
-    }
+    sortedLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
 
     return sortedLeaderboard.map((entry, index) => ({
       rank: index + 1,
@@ -133,7 +103,7 @@ export function LeaderboardNew() {
       avatar: getInitial(entry.name),
       avatarUrl: getProfilePicture(entry.profileId),
       category: entry.category,
-      score: activeTab === 'weekly' ? (entry.weeklyScore || 0) : entry.totalScore,
+      score: entry.totalScore,
       quizScore: entry.quizScore,
       eventScore: entry.eventScore,
       weeklyScore: entry.weeklyScore,
@@ -146,27 +116,27 @@ export function LeaderboardNew() {
 
   const handleShare = () => {
     if (!currentUserEntry) {
-      toast.error('Join the battle first! Complete some quests! ⚔️');
+      toast.error('Participate first to share your rank! 🏆');
       return;
     }
 
     const rank = currentUserEntry.rank;
-    let rankEmoji = '⚔️';
+    let rankEmoji = '✨';
     if (rank === 1) rankEmoji = '👑';
     else if (rank <= 3) rankEmoji = '🏆';
     else if (rank <= 10) rankEmoji = '⭐';
     else if (rank <= 100) rankEmoji = '🔥';
 
-    const shareText = `${rankEmoji} I'm ranked #${rank} on the Geeta Olympiad Battle Arena with ${currentUserEntry.score} XP! Think you can beat me? 💪`;
+    const shareText = `${rankEmoji} I'm ranked #${rank} on the Geeta Olympiad Leaderboard with ${currentUserEntry.score} points! Join me in this journey! 💪`;
     
     if (navigator.share) {
       navigator.share({
-        title: 'Geeta Olympiad Battle Rankings',
+        title: 'Geeta Olympiad Leaderboard',
         text: shareText,
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText);
-      toast.success('Battle stats copied! Share with your rivals! 🎯');
+      toast.success('Leaderboard stats copied to clipboard! 🎯');
     }
   };
 
@@ -176,7 +146,10 @@ export function LeaderboardNew() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 p-6 text-white relative overflow-hidden"
+        className="rounded-2xl p-6 text-white relative overflow-hidden"
+        style={{ 
+          background: 'linear-gradient(to right, #f97316, #ea580c, #c2410c)'
+        }}
       >
         {/* Animated background */}
         <div className="absolute inset-0 opacity-10">
@@ -203,8 +176,8 @@ export function LeaderboardNew() {
                 <Trophy className="w-10 h-10" />
               </motion.div>
               <div>
-                <h1 className="text-4xl font-black">Battle Arena</h1>
-                <p className="text-white/90 font-semibold">⚔️ Compete. Conquer. Dominate. 🏆</p>
+                <h1 className="text-4xl font-black">Leaderboard</h1>
+                <p className="text-white/90 font-semibold">Top performers in Geeta Olympiad</p>
               </div>
             </div>
             
@@ -215,18 +188,18 @@ export function LeaderboardNew() {
                 transition={{ delay: 0.2 }}
                 className="mt-4 inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl border-2 border-white/30"
               >
-                <Swords className="w-5 h-5" />
+                <Trophy className="w-5 h-5" />
                 <div>
-                  <div className="text-xs font-semibold opacity-90">YOUR BATTLE RANK</div>
+                  <div className="text-xs font-semibold opacity-90">YOUR RANK</div>
                   <div className="flex items-center gap-2">
                     <span className="text-3xl font-black">#{currentUserEntry.rank}</span>
                     <span className="text-sm font-bold">
-                      {currentUserEntry.rank === 1 && '👑 CHAMPION'}
-                      {currentUserEntry.rank === 2 && '🥈 RUNNER-UP'}
-                      {currentUserEntry.rank === 3 && '🥉 FINALIST'}
-                      {currentUserEntry.rank > 3 && currentUserEntry.rank <= 10 && '⭐ ELITE'}
-                      {currentUserEntry.rank > 10 && currentUserEntry.rank <= 100 && '🔥 WARRIOR'}
-                      {currentUserEntry.rank > 100 && '⚔️ FIGHTER'}
+                      {currentUserEntry.rank === 1 && '👑 1st Place'}
+                      {currentUserEntry.rank === 2 && '🥈 2nd Place'}
+                      {currentUserEntry.rank === 3 && '🥉 3rd Place'}
+                      {currentUserEntry.rank > 3 && currentUserEntry.rank <= 10 && '⭐ Top 10'}
+                      {currentUserEntry.rank > 10 && currentUserEntry.rank <= 100 && '🔥 Top 100'}
+                      {currentUserEntry.rank > 100 && '✨ Participant'}
                     </span>
                   </div>
                 </div>
@@ -247,136 +220,146 @@ export function LeaderboardNew() {
         </div>
       </motion.div>
 
-      {/* Gamified Tabs */}
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <motion.button
-              key={tab.id}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold whitespace-nowrap border-2",
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-orange-500 to-pink-600 text-white border-orange-400 shadow-lg"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800 hover:border-orange-300 dark:hover:border-orange-700"
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              {tab.label}
-            </motion.button>
-          );
-        })}
-      </div>
 
       {/* 🏆 Top 3 Podium */}
       {displayedLeaderboard.length >= 3 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-3 gap-4 p-6 rounded-2xl bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 dark:from-yellow-950/10 dark:via-orange-950/10 dark:to-red-950/10 border-2 border-yellow-300 dark:border-yellow-800"
+        <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-6 md:gap-8"
         >
-          {/* 2nd Place */}
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col items-center pt-8"
-          >
-            <div className="relative mb-3">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-400 shadow-xl">
-                <ImageWithFallback
-                  src={displayedLeaderboard[1].avatarUrl || ''}
-                  alt={displayedLeaderboard[1].name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 border-3 border-white shadow-lg flex items-center justify-center text-2xl">
-                🥈
-              </div>
-            </div>
-            <div className="font-black text-center text-gray-900 dark:text-white truncate w-full px-2">
-              {displayedLeaderboard[1].name}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-bold">
-              {displayedLeaderboard[1].score.toLocaleString()} XP
-            </div>
-          </motion.div>
-
-          {/* 1st Place */}
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-col items-center relative"
-          >
+            {/* 2nd Place */}
             <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute -top-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="w-full md:w-64 min-h-[380px] bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg border-2 border-gray-300 dark:border-gray-700"
             >
-              <Crown className="w-12 h-12 text-yellow-400 fill-yellow-400" />
-            </motion.div>
-            <div className="relative mb-3 mt-6">
-              <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="w-24 h-24 rounded-full overflow-hidden border-4 border-yellow-400 shadow-2xl"
-              >
-                <ImageWithFallback
-                  src={displayedLeaderboard[0].avatarUrl || ''}
-                  alt={displayedLeaderboard[0].name}
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-              <div className="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 to-orange-500 border-3 border-white shadow-lg flex items-center justify-center text-3xl">
-                🥇
-              </div>
-            </div>
-            <div className="font-black text-center text-gray-900 dark:text-white truncate w-full px-2 text-lg">
-              {displayedLeaderboard[0].name}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-bold">
-              {displayedLeaderboard[0].score.toLocaleString()} XP
-            </div>
-            <div className="mt-2 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-black">
-              CHAMPION 👑
-            </div>
-          </motion.div>
+              <div className="flex flex-col items-center text-center h-full justify-center">
+                {/* Medal Badge */}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center shadow-lg mb-4">
+                  <span className="text-2xl">🥈</span>
+                </div>
 
-          {/* 3rd Place */}
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col items-center pt-12"
-          >
-            <div className="relative mb-3">
-              <div className="w-18 h-18 rounded-full overflow-hidden border-4 border-orange-400 shadow-xl">
-                <ImageWithFallback
-                  src={displayedLeaderboard[2].avatarUrl || ''}
-                  alt={displayedLeaderboard[2].name}
-                  className="w-full h-full object-cover"
-                />
+                {/* Avatar */}
+                <div className="relative mb-4">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-400 shadow-lg">
+                    <ImageWithFallback
+                      src={displayedLeaderboard[1].avatarUrl || ''}
+                      alt={displayedLeaderboard[1].name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Name */}
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3 truncate w-full">
+                  {displayedLeaderboard[1].name}
+                </h3>
+
+                {/* Score */}
+                <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                  <Trophy className="w-5 h-5" />
+                  <span className="text-xl font-bold">
+                    {displayedLeaderboard[1].score.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Points</p>
               </div>
-              <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-3 border-white shadow-lg flex items-center justify-center text-2xl">
-                🥉
+            </motion.div>
+
+            {/* 1st Place */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+              className="w-full md:w-80 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 rounded-3xl p-5 shadow-2xl"
+              style={{ 
+                border: '2px solid #9333EA',
+                boxShadow: '0 0 0 2px rgba(147, 51, 234, 0.3), 0 20px 25px -5px rgba(168, 85, 247, 0.4), 0 8px 10px -6px rgba(168, 85, 247, 0.4)'
+              }}
+            >
+              <div className="flex flex-col items-center text-center">
+                {/* Medal Badge */}
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-xl mb-2">
+                  <span className="text-3xl">🥇</span>
+                </div>
+
+                {/* Avatar */}
+                <div className="relative mb-2">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-400 shadow-2xl">
+                    <ImageWithFallback
+                      src={displayedLeaderboard[0].avatarUrl || ''}
+                      alt={displayedLeaderboard[0].name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Badge */}
+                <div className="px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 mb-2 shadow-lg">
+                  <span className="text-white font-black text-xs tracking-wide">1ST PLACE</span>
+                </div>
+
+                {/* Name */}
+                <h3 className="font-black text-xl text-gray-900 dark:text-white mb-2 truncate w-full">
+                  {displayedLeaderboard[0].name}
+                </h3>
+
+                {/* Score */}
+                <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                  <Trophy className="w-5 h-5" />
+                  <span className="text-2xl font-black">
+                    {displayedLeaderboard[0].score.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-semibold">Points</p>
               </div>
-            </div>
-            <div className="font-black text-center text-gray-900 dark:text-white truncate w-full px-2">
-              {displayedLeaderboard[2].name}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-bold">
-              {displayedLeaderboard[2].score.toLocaleString()} XP
-            </div>
-          </motion.div>
-        </motion.div>
+            </motion.div>
+
+            {/* 3rd Place */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="w-full md:w-64 min-h-[380px] bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg border-2 border-gray-300 dark:border-gray-600"
+            >
+              <div className="flex flex-col items-center text-center h-full justify-center">
+                {/* Medal Badge */}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center shadow-lg mb-4">
+                  <span className="text-2xl">🥉</span>
+                </div>
+
+                {/* Avatar */}
+                <div className="relative mb-4">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-400 shadow-lg">
+                    <ImageWithFallback
+                      src={displayedLeaderboard[2].avatarUrl || ''}
+                      alt={displayedLeaderboard[2].name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Name */}
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3 truncate w-full">
+                  {displayedLeaderboard[2].name}
+                </h3>
+
+                {/* Score */}
+                <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                  <Trophy className="w-5 h-5" />
+                  <span className="text-xl font-bold">
+                    {displayedLeaderboard[2].score.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Points</p>
+              </div>
+            </motion.div>
+        </div>
       )}
 
-      {/* Battle Rankings List */}
+      {/* Leaderboard Rankings */}
       {displayedLeaderboard.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -385,10 +368,10 @@ export function LeaderboardNew() {
         >
           <Trophy className="w-20 h-20 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
           <h3 className="text-2xl font-black text-gray-600 dark:text-gray-400 mb-2">
-            No Warriors Yet! 
+            No Participants Yet! 
           </h3>
           <p className="text-gray-500 dark:text-gray-500 font-semibold">
-            Be the first to conquer quests and claim your throne! ⚔️
+            Be the first to participate and appear on the leaderboard! 🏆
           </p>
         </motion.div>
       ) : (
@@ -464,7 +447,7 @@ export function LeaderboardNew() {
                         {entry.score.toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 font-bold">
-                        XP
+                        Points
                       </div>
                     </div>
                   </div>
@@ -475,7 +458,7 @@ export function LeaderboardNew() {
         </div>
       )}
 
-      {/* Share Battle Stats */}
+      {/* Share Rankings */}
       {currentUserEntry && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -487,39 +470,37 @@ export function LeaderboardNew() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleShare}
-            className="bg-gradient-to-r from-orange-500 via-pink-600 to-red-600 hover:from-orange-600 hover:via-pink-700 hover:to-red-700 text-white px-8 py-4 rounded-xl font-black flex items-center gap-2 shadow-lg text-lg"
+            className="bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white px-8 py-4 rounded-xl font-black flex items-center gap-2 shadow-lg text-lg"
           >
             <Share2 className="w-5 h-5" />
-            Challenge Your Rivals! ⚔️
+            Share Your Rank! 🏆
           </motion.button>
         </motion.div>
       )}
 
-      {/* Battle Info */}
+      {/* Leaderboard Info */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-2 border-blue-300 dark:border-blue-800"
+        className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-2 border-purple-300 dark:border-purple-800"
       >
         <div className="flex gap-3">
-          <div className="text-4xl">⚔️</div>
+          <div className="text-4xl">🏆</div>
           <div>
-            <p className="font-black mb-2 text-gray-900 dark:text-white text-lg">Battle Arena Rules</p>
-            <ul className="space-y-2 text-gray-700 dark:text-gray-300 font-semibold">
-              <li>🏆 <strong>Global Arena:</strong> Fight against all warriors worldwide!</li>
-              <li>⚔️ <strong>Guild Wars:</strong> Battle within your school/guild</li>
-              <li>👑 <strong>Kingdom:</strong> Compete in your regional kingdom</li>
-              <li>🔥 <strong>This Week:</strong> Weekly power rankings reset every 7 days!</li>
-            </ul>
-            <p className="mt-3 text-orange-600 dark:text-orange-400 font-bold">
-              💪 Complete quests, win battles, and dominate the arena! The throne awaits! 👑
+            <p className="font-black mb-2 text-gray-900 dark:text-white text-lg">Leaderboard Info</p>
+            <p className="text-gray-700 dark:text-gray-300 font-semibold">
+              Complete quizzes, collect puzzle pieces, and participate in activities to earn points and climb the rankings! 
+              Your total score determines your position on the leaderboard.
+            </p>
+            <p className="mt-3 text-purple-600 dark:text-purple-400 font-bold">
+              💪 Keep participating to reach the top! 👑
             </p>
           </div>
         </div>
       </motion.div>
 
-      {/* Battle Stats Summary */}
+      {/* Stats Summary */}
       {displayedLeaderboard.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -529,13 +510,13 @@ export function LeaderboardNew() {
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="p-6 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border-2 border-yellow-300 dark:border-yellow-800 text-center"
+            className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-2 border-purple-300 dark:border-purple-800 text-center"
           >
-            <div className="text-4xl font-black text-orange-600 dark:text-orange-400 mb-2">
+            <div className="text-4xl font-black text-purple-600 dark:text-purple-400 mb-2">
               {displayedLeaderboard.length}
             </div>
             <div className="font-bold text-gray-600 dark:text-gray-400">
-              Active Warriors
+              Total Participants
             </div>
           </motion.div>
           <motion.div
@@ -546,7 +527,7 @@ export function LeaderboardNew() {
               {displayedLeaderboard[0]?.score.toLocaleString() || 0}
             </div>
             <div className="font-bold text-gray-600 dark:text-gray-400">
-              Highest Power
+              Highest Score
             </div>
           </motion.div>
           <motion.div
@@ -557,7 +538,7 @@ export function LeaderboardNew() {
               {Math.round(displayedLeaderboard.reduce((sum, e) => sum + e.score, 0) / displayedLeaderboard.length) || 0}
             </div>
             <div className="font-bold text-gray-600 dark:text-gray-400">
-              Average Power
+              Average Score
             </div>
           </motion.div>
         </motion.div>
