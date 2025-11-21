@@ -15,19 +15,26 @@ import { NewQuizPage } from './components/portal/NewQuizPage';
 import { EventsPage } from './components/portal/EventsPage';
 import { LeaderboardPage } from './components/portal/LeaderboardPage';
 import { AdminPanel } from './components/portal/AdminPanel';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { PortalLayout } from './components/portal/PortalLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 import { TOAST_POSITION } from './utils/config';
 
 function AppContent() {
   const { isAuthenticated, isAdmin, currentProfile } = useApp();
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState(() => isAdmin ? 'admin' : 'home');
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // Show profile creation prompt if logged in but no profile
+  // Handle page routing based on auth state
   useEffect(() => {
-    if (isAuthenticated && !isAdmin && !currentProfile && currentPage !== 'profile') {
+    if (isAuthenticated && isAdmin) {
+      // Set admin to admin dashboard
+      if (currentPage !== 'admin' && currentPage !== 'home') {
+        setCurrentPage('admin');
+      }
+    } else if (isAuthenticated && !isAdmin && !currentProfile && currentPage !== 'profile') {
+      // Show profile creation prompt if logged in but no profile
       setCurrentPage('profile');
     }
   }, [isAuthenticated, isAdmin, currentProfile, currentPage]);
@@ -71,7 +78,7 @@ function AppContent() {
     return (
       <div className="min-h-screen mandala-bg">
         <PortalHeader currentPage={currentPage} onNavigate={setCurrentPage} />
-        {currentPage === 'admin' && <AdminPanel />}
+        {(currentPage === 'admin' || currentPage === 'dashboard') && <AdminDashboard />}
         {currentPage === 'home' && <HomePage onOpenAuth={handleOpenAuth} />}
         <Toaster position="bottom-right" />
       </div>

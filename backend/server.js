@@ -9,6 +9,10 @@ import loginsRouter from './routes/logins.js';
 import emailUsersRouter from './routes/emailUsers.js';
 import phoneUsersRouter from './routes/phoneUsers.js';
 import quizRouter from './routes/quiz.js';
+import leaderboardRouter from './routes/leaderboard.js';
+import authRouter from './routes/auth.js';
+import { initializeDefaultAdmin } from './models/Admin.js';
+import { getDatabase } from './config/database.js';
 
 dotenv.config();
 
@@ -36,6 +40,8 @@ app.use('/api/logins', loginsRouter);
 app.use('/api/email-users', emailUsersRouter);
 app.use('/api/phone-users', phoneUsersRouter);
 app.use('/api/quiz', quizRouter);
+app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/auth', authRouter);
 
 // 404 handler
 app.use((req, res) => {
@@ -57,6 +63,10 @@ async function startServer() {
     // Connect to MongoDB
     await connectToDatabase();
     console.log('MongoDB connection established');
+
+    // Initialize default admin if needed
+    const db = await getDatabase();
+    await initializeDefaultAdmin(db);
 
     // Start Express server
     app.listen(PORT, () => {
