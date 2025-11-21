@@ -104,7 +104,11 @@ export function NewPortalHeader({ onNavigate, onMenuClick }: NewPortalHeaderProp
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{currentProfile?.name || 'User'}</p>
-                  <p className="text-xs text-gray-500">{user?.email || user?.phone || ''}</p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email && !user.email.includes('placeholder.com') 
+                      ? user.email 
+                      : user?.phone || ''}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

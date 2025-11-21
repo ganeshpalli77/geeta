@@ -185,7 +185,11 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
                     </Avatar>
                     <div className="flex flex-col">
                       <p className="text-sm">{currentProfile.name}</p>
-                      <p className="text-xs text-gray-500">{user?.email || user?.phone || ''}</p>
+                      <p className="text-xs text-gray-500">
+                        {user?.email && !user.email.includes('placeholder.com') 
+                          ? user.email 
+                          : user?.phone || ''}
+                      </p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />

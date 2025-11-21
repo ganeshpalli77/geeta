@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { User, Mail, School, MapPin, Calendar, Trophy, Target, Zap, Activity, LogOut, Edit, Star, Flame, Crown, Sword, Shield, Award } from 'lucide-react';
+import { User, Mail, Phone, School, MapPin, Calendar, Trophy, Target, Zap, Activity, LogOut, Edit, Star, Flame, Crown, Sword, Shield, Award } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
@@ -497,7 +497,20 @@ export function ProfileNew() {
             <Mail className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             <div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Email</div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-white">{user?.email || 'Not provided'}</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                {user?.email && !user.email.includes('placeholder.com') 
+                  ? user.email 
+                  : 'Not provided'}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <Phone className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Phone</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                {user?.phone || 'Not provided'}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
