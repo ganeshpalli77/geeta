@@ -12,6 +12,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { QuizQuestion } from '../../contexts/AppContext';
 import { getDailyQuizQuestions } from '../../services/dailyQuizService';
+import { API_BASE_URL } from '../../utils/config';
 import {
   BookOpen,
   Clock,
@@ -28,9 +29,9 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 export function DailyQuizPage() {
-  const { currentProfile, submitQuiz } = useApp();
+  const { currentProfile, submitQuiz, user } = useApp();
   const t = useTranslation();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   const [quizStarted, setQuizStarted] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -41,6 +42,8 @@ export function DailyQuizPage() {
   const [results, setResults] = useState<any>(null);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [alreadyAttempted, setAlreadyAttempted] = useState(false);
+  const [nextAttemptTime, setNextAttemptTime] = useState<string | null>(null);
 
   // Timer effect
   useEffect(() => {
@@ -73,9 +76,48 @@ export function DailyQuizPage() {
     }
   }, [quizStarted]);
 
+  // Check if user already attempted today's quiz - Reset state when profile changes
+  useEffect(() => {
+    // Reset all state when profile changes
+    setQuizStarted(false);
+    setQuestions([]);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setTimeRemaining(0);
+    setShowResults(false);
+    setResults(null);
+    setShowSubmitDialog(false);
+    setAlreadyAttempted(false);
+    setNextAttemptTime(null);
+
+    const checkDailyAttempt = async () => {
+      if (!currentProfile) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/quiz/check-daily-attempt/${currentProfile.id}`);
+        const data = await response.json();
+
+        if (data.attempted) {
+          setAlreadyAttempted(true);
+          setNextAttemptTime(data.nextAttemptAt);
+          toast.info('You have already completed today\'s daily quiz!');
+        }
+      } catch (error) {
+        console.error('Error checking daily attempt:', error);
+      }
+    };
+
+    checkDailyAttempt();
+  }, [currentProfile?.id]); // Use currentProfile.id to trigger on profile change
+
   const startQuiz = async () => {
     if (!currentProfile) {
       toast.error('Please create a profile first');
+      return;
+    }
+
+    if (alreadyAttempted) {
+      toast.error('You have already attempted today\'s quiz. Come back tomorrow!');
       return;
     }
 
@@ -83,8 +125,8 @@ export function DailyQuizPage() {
     try {
       const loadingToast = toast.loading('Loading today\'s daily quiz questions...');
 
-      // Fetch daily quiz questions from backend
-      const quizQuestions = await getDailyQuizQuestions();
+      // Fetch daily quiz questions from backend with current language
+      const quizQuestions = await getDailyQuizQuestions(language);
       
       if (!quizQuestions || quizQuestions.length === 0) {
         toast.error('No questions available for today\'s quiz');
@@ -107,6 +149,24 @@ export function DailyQuizPage() {
       setIsLoading(false);
     }
   };
+
+  // Reload questions when language changes during quiz
+  useEffect(() => {
+    if (quizStarted) {
+      const reloadQuestions = async () => {
+        try {
+          const quizQuestions = await getDailyQuizQuestions(language);
+          if (quizQuestions && quizQuestions.length > 0) {
+            setQuestions(quizQuestions);
+            toast.success('Questions updated to ' + language);
+          }
+        } catch (error) {
+          console.error('Error reloading questions:', error);
+        }
+      };
+      reloadQuestions();
+    }
+  }, [language]);
 
   const handleAnswerChange = (questionId: string, answerIndex: string) => {
     setAnswers((prev) => ({
@@ -140,22 +200,33 @@ export function DailyQuizPage() {
     };
   };
 
-  const handleSubmitQuiz = () => {
-    if (!currentProfile) return;
+  const handleSubmitQuiz = async () => {
+    if (!currentProfile || !user) return;
 
     const { score, correctAnswers } = calculateScore();
     const timeSpent = (questions.length * 60) - timeRemaining;
 
-    submitQuiz({
-      profileId: currentProfile.id,
-      type: 'daily' as any,
-      questions,
-      answers,
-      score,
-      totalQuestions: questions.length,
-      correctAnswers,
-      timeSpent,
-    });
+    try {
+      await submitQuiz({
+        profileId: currentProfile.id,
+        userId: user.id,
+        type: 'daily' as any,
+        questions,
+        answers,
+        score,
+        totalQuestions: questions.length,
+        correctAnswers,
+        timeSpent,
+        language,
+      });
+
+      // Mark as attempted
+      setAlreadyAttempted(true);
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      toast.error('Failed to submit quiz. Please try again.');
+      return;
+    }
 
     setResults({
       score,
@@ -280,12 +351,28 @@ export function DailyQuizPage() {
           <Progress value={progressPercentage} className="mt-3 md:mt-4" />
         </Card>
 
-        {/* Language Indicator */}
+        {/* Language Selector */}
         <Card className="p-3 mb-4 bg-[#FFF8ED]">
-          <div className="flex items-center justify-center gap-2 text-sm text-[#193C77]">
+          <div className="flex items-center justify-center gap-3 text-sm text-[#193C77]">
             <Languages className="w-4 h-4" />
-            <span>Current Language: <strong>{language === 'hindi' ? 'हिंदी' : 'English'}</strong></span>
-            <span className="text-xs text-gray-500">(Change language from settings)</span>
+            <span>Current Language:</span>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as any)}
+              className="px-3 py-1 border border-[#193C77] rounded-md bg-white text-[#193C77] font-semibold cursor-pointer hover:bg-[#FFF8ED] transition-colors"
+            >
+              <option value="english">English</option>
+              <option value="hindi">हिंदी (Hindi)</option>
+              <option value="marathi">मराठी (Marathi)</option>
+              <option value="tamil">தமிழ் (Tamil)</option>
+              <option value="telugu">తెలుగు (Telugu)</option>
+              <option value="kannada">ಕನ್ನಡ (Kannada)</option>
+              <option value="malayalam">മലയാളം (Malayalam)</option>
+              <option value="gujarati">ગુજરાતી (Gujarati)</option>
+              <option value="bengali">বাংলা (Bengali)</option>
+              <option value="odia">ଓଡ଼ିଆ (Odia)</option>
+              <option value="nepali">नेपाली (Nepali)</option>
+            </select>
           </div>
         </Card>
 
@@ -296,7 +383,7 @@ export function DailyQuizPage() {
               Difficulty: <span className="capitalize px-2 py-1 bg-[#FFF8ED] rounded text-xs md:text-sm">{currentQuestion.difficulty}</span>
             </div>
             <h3 className="text-lg md:text-xl lg:text-2xl text-[#822A12] mb-2">
-              {language === 'hindi' ? currentQuestion.questionHi : currentQuestion.question}
+              {currentQuestion.question}
             </h3>
           </div>
 
@@ -305,7 +392,7 @@ export function DailyQuizPage() {
             onValueChange={(value: string) => handleAnswerChange(currentQuestion.id, value)}
           >
             <div className="space-y-3 md:space-y-4">
-              {(language === 'hindi' ? currentQuestion.optionsHi : currentQuestion.options).map((option: string, index: number) => (
+              {currentQuestion.options.map((option: string, index: number) => (
                 <div
                   key={index}
                   className={`flex items-center space-x-2 md:space-x-3 p-3 md:p-4 rounded-xl border-2 transition-all cursor-pointer ${
@@ -436,24 +523,43 @@ export function DailyQuizPage() {
           </ul>
         </div>
 
-        <Button
-          onClick={startQuiz}
-          disabled={isLoading}
-          className="w-full rounded-[25px]"
-          style={{ backgroundColor: '#D55328' }}
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Loading Quiz...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4 mr-2" />
-              Start Today's Quiz
-            </>
-          )}
-        </Button>
+        {alreadyAttempted ? (
+          <div className="space-y-3">
+            <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl text-center">
+              <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-600" />
+              <p className="text-green-800 font-semibold mb-1">Quiz Completed!</p>
+              <p className="text-sm text-green-700">You've already completed today's daily quiz.</p>
+              <p className="text-xs text-green-600 mt-2">Come back tomorrow for new questions!</p>
+            </div>
+            <Button
+              disabled
+              className="w-full rounded-[25px] opacity-60"
+              style={{ backgroundColor: '#D55328' }}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Next Quiz Available Tomorrow
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={startQuiz}
+            disabled={isLoading}
+            className="w-full rounded-[25px]"
+            style={{ backgroundColor: '#D55328' }}
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Loading Quiz...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Start Today's Quiz
+              </>
+            )}
+          </Button>
+        )}
       </Card>
     </div>
   );

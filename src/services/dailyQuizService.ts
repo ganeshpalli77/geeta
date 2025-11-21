@@ -18,20 +18,22 @@ const CACHE_DURATION = 60000; // 1 minute cache
 /**
  * Get daily quiz questions for today
  * All users will receive the same questions for the same day
+ * Questions are fetched based on language but use the same indices
  */
-export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promise<QuizQuestion[]> {
+export async function getDailyQuizQuestions(language: string = 'english'): Promise<QuizQuestion[]> {
   try {
-    // Check cache first
+    // Check cache first (cache per language)
     const today = new Date().toISOString().split('T')[0];
+    const cacheKey = `${today}-${language}`;
     if (questionCache && 
-        questionCache.date === today && 
+        questionCache.date === cacheKey && 
         Date.now() - questionCache.timestamp < CACHE_DURATION) {
-      console.log('✅ Returning cached daily quiz questions');
+      console.log('✅ Returning cached daily quiz questions for language:', language);
       return questionCache.questions;
     }
 
-    const url = `${API_BASE_URL}/quiz/daily-questions`;
-    console.log('🔄 Fetching daily quiz questions from:', url);
+    const url = `${API_BASE_URL}/quiz/daily-questions?language=${language}`;
+    console.log('🔄 Fetching daily quiz questions from:', url, 'Language:', language);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -56,12 +58,12 @@ export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promi
       return [];
     }
     
-    console.log(`✅ Loaded ${data.questions.length} daily quiz questions`);
+    console.log(`✅ Loaded ${data.questions.length} daily quiz questions for language: ${language}`);
     
-    // Update cache
+    // Update cache (with language key)
     questionCache = {
       questions: data.questions,
-      date: today,
+      date: cacheKey,
       timestamp: Date.now()
     };
     

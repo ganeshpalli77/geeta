@@ -90,7 +90,7 @@ export interface LeaderboardEntry {
 }
 
 // Helper function to make real API calls
-async function apiCall<T>(endpoint: string, method: string = 'GET', data?: any, language?: string): Promise<T> {
+export async function apiCall<T>(endpoint: string, method: string = 'GET', data?: any, language?: string): Promise<T> {
   const url = new URL(`${API_BASE_URL}${endpoint}`);
   
   // Add language parameter to all requests
@@ -364,7 +364,7 @@ export const profileAPI = {
 
 export const quizAPI = {
   // Submit quiz attempt
-  submitQuiz: async (attemptData: Omit<QuizAttempt, '_id'>): Promise<QuizAttempt> => {
+  submitQuiz: async (attemptData: Omit<QuizAttempt, '_id'> & { userId?: string }): Promise<QuizAttempt> => {
     if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.insertOne('quizAttempts', attemptData) as QuizAttempt;
     }

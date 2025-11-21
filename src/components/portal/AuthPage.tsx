@@ -39,6 +39,9 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
 
   // Send OTP to email and/or phone based on what user provided
   const handleSendOTP = async () => {
+    // Prevent double-click
+    if (loading) return;
+    
     // For LOGIN: At least one field required
     // For REGISTRATION: Both fields required
     if (authMode === 'register') {
@@ -74,7 +77,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     // For LOGIN: Check if user exists
     if (authMode === 'login') {
       try {
-        const checkResponse = await fetch('http://localhost:5000/api/users/check-exists', {
+        const checkResponse = await fetch(`${API_BASE_URL}/users/check-exists`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, phone: formattedPhone }),
@@ -86,15 +89,15 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         }
       } catch (err) {
         console.error('Error checking user existence:', err);
-        toast.error('Unable to verify account. Please try again.');
-        return;
+        // Don't block login if check fails - let Supabase handle it
+        console.warn('Proceeding with OTP send despite check failure');
       }
     }
 
     // For REGISTRATION: Check if user already exists (prevent duplicate registration)
     if (authMode === 'register') {
       try {
-        const checkResponse = await fetch('http://localhost:5000/api/users/check-exists', {
+        const checkResponse = await fetch(`${API_BASE_URL}/users/check-exists`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, phone: formattedPhone }),
@@ -113,6 +116,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         }
       } catch (err) {
         // If 404, user doesn't exist - this is good for registration
+        console.warn('User check failed, proceeding with registration');
       }
     }
 
@@ -123,7 +127,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
       // For REGISTRATION: Store pending registration in MongoDB BEFORE sending OTP
       if (authMode === 'register' && email && phone) {
         try {
-          const response = await fetch('http://localhost:5000/api/pending-registrations/store', {
+          const response = await fetch(`${API_BASE_URL}/pending-registrations/store`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, phone: formattedPhone }),
@@ -134,6 +138,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
           }
         } catch (err) {
           console.error('Error storing pending registration:', err);
+          // Don't block registration if this fails
         }
       }
       
@@ -409,10 +414,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
               </div>
               
               <Button
+                type="button"
                 onClick={handleSendOTP}
                 disabled={loading}
-                className="w-full rounded-[25px]"
-                style={{ backgroundColor: '#D55328' }}
+                className="w-full rounded-[25px] hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: loading ? '#999' : '#D55328' }}
               >
                 {loading ? t('loading') : (authMode === 'register' ? 'Send OTP to Register' : 'Send OTP to Login')}
               </Button>

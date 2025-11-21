@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { User, Calendar, IdCard, Globe, School, Gift } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useApp } from '../../contexts/AppContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { motion } from 'motion/react';
 
-export function ProfileCreationForm() {
+interface ProfileCreationFormProps {
+  onSuccess?: () => void;
+}
+
+export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
   const { createProfile } = useApp();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,6 +49,11 @@ export function ProfileCreationForm() {
         referralCode: formData.referralCode.trim() || undefined,
       });
       toast.success('✅ Profile created successfully!');
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error creating profile:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create profile';

@@ -280,16 +280,190 @@ function getTodaySeed() {
 }
 
 /**
+ * POST /api/quiz/submit
+ * Submit quiz attempt and store score
+ */
+router.post('/submit', async (req, res) => {
+  try {
+    console.log('📝 Quiz submit endpoint called');
+    const { profileId, userId, type, questions, answers, score, totalQuestions, correctAnswers, timeSpent, language } = req.body;
+    console.log('📦 Request body:', { profileId, userId, type, score, totalQuestions });
+
+    // Validate required fields
+    if (!profileId || !userId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'profileId and userId are required' 
+      });
+    }
+
+    await ensureConnection();
+    const geetaDb = client.db('geeta-olympiad');
+    const scoresCollection = geetaDb.collection('quiz user scores');
+
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    // For daily quiz, check if user already attempted today
+    if (type === 'daily') {
+      const existingAttempt = await scoresCollection.findOne({
+        profileId,
+        type: 'daily',
+        date: today
+      });
+
+      if (existingAttempt) {
+        return res.status(400).json({
+          success: false,
+          error: 'You have already attempted the daily quiz today. Come back tomorrow!',
+          nextAttemptAt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+    }
+
+    // Create quiz attempt document
+    const quizAttempt = {
+      profileId,
+      userId,
+      type: type || 'daily',
+      date: today,
+      questions: questions || [],
+      answers: answers || {},
+      score: score || 0,
+      totalQuestions: totalQuestions || 0,
+      correctAnswers: correctAnswers || 0,
+      timeSpent: timeSpent || 0,
+      language: language || 'english',
+      completedAt: new Date(),
+      createdAt: new Date()
+    };
+
+    const result = await scoresCollection.insertOne(quizAttempt);
+
+    console.log(`✅ Quiz submitted: ${type} quiz by profile ${profileId}, score: ${score}/${totalQuestions}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Quiz submitted successfully',
+      attempt: {
+        _id: result.insertedId,
+        ...quizAttempt
+      }
+    });
+  } catch (error) {
+    console.error('Error submitting quiz:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to submit quiz',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /api/quiz/check-daily-attempt/:profileId
+ * Check if user has already attempted daily quiz today
+ */
+router.get('/check-daily-attempt/:profileId', async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    
+    await ensureConnection();
+    const geetaDb = client.db('geeta-olympiad');
+    const scoresCollection = geetaDb.collection('quiz user scores');
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const existingAttempt = await scoresCollection.findOne({
+      profileId,
+      type: 'daily',
+      date: today
+    });
+
+    if (existingAttempt) {
+      const tomorrow = new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000);
+      return res.json({
+        success: true,
+        attempted: true,
+        message: 'Already attempted today',
+        nextAttemptAt: tomorrow.toISOString(),
+        lastAttempt: existingAttempt
+      });
+    }
+
+    res.json({
+      success: true,
+      attempted: false,
+      message: 'Can attempt daily quiz'
+    });
+  } catch (error) {
+    console.error('Error checking daily attempt:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to check attempt status',
+      message: error.message 
+    });
+  }
+});
+
+/**
  * GET /api/quiz/daily-questions
  * Fetch daily quiz questions - same questions for all users on the same day
+ * Questions are generated at 12:00 AM and stored in dailyquestions collection
+ * Supports multiple languages via query parameter
  */
 router.get('/daily-questions', async (req, res) => {
   try {
+    // Get language from query parameter (default to english)
+    const language = req.query.language || 'english';
+    
     // Ensure MongoDB connection
     await ensureConnection();
     const geetaDb = client.db('geetaOlympiad');
     const questionDb = client.db('questiondatabase');
-    const collection = questionDb.collection('english');
+    
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Check if today's questions already exist in dailyquestions collection
+    const dailyQuestionsCollection = questionDb.collection('dailyquestions');
+    const existingDailyQuestions = await dailyQuestionsCollection.findOne({
+      date: today,
+      language: language
+    });
+
+    // If questions exist for today and this language, return them
+    if (existingDailyQuestions && existingDailyQuestions.questions && existingDailyQuestions.questions.length > 0) {
+      console.log(`✅ Returning cached daily questions for ${today}, language: ${language}`);
+      return res.json({
+        success: true,
+        questions: existingDailyQuestions.questions,
+        count: existingDailyQuestions.questions.length,
+        date: today,
+        seed: existingDailyQuestions.seed,
+        cached: true
+      });
+    }
+
+    console.log(`🔄 Generating new daily questions for ${today}, language: ${language}`);
+    
+    // Map language names to collection names
+    const languageCollectionMap = {
+      'english': 'english',
+      'hindi': 'hindi',
+      'marathi': 'marathi',
+      'tamil': 'tamil',
+      'telugu': 'telugu',
+      'kannada': 'kannada',
+      'malayalam': 'malayalam',
+      'gujarati': 'gujarati',
+      'bengali': 'bangla',
+      'odia': 'odia',
+      'nepali': 'nepali',
+    };
+    
+    const collectionName = languageCollectionMap[language] || 'english';
+    const collection = questionDb.collection(collectionName);
+    
+    console.log(`🌍 Fetching questions in language: ${language} from collection: ${collectionName}`);
 
     // Get quiz configuration
     const config = await getQuizConfig(geetaDb);
@@ -361,26 +535,42 @@ router.get('/daily-questions', async (req, res) => {
         return {
           id: q._id.toString(),
           question: q.Question || q.question || '',
-          questionHi: q['Question (Hindi)'] || q.Question || '',
           options: options,
-          optionsHi: [
-            q['Option A (Hindi)'] || q['Option A'] || '',
-            q['Option B (Hindi)'] || q['Option B'] || '',
-            q['Option C (Hindi)'] || q['Option C'] || '',
-            q['Option D (Hindi)'] || q['Option D'] || '',
-          ],
           correctAnswer: correctAnswerIndex,
           difficulty: (q.Difficulty || 'medium').toLowerCase(),
           category: q.Category || 'General',
         };
       });
       
+      // Store today's questions in dailyquestions collection for future retrieval
+      try {
+        await dailyQuestionsCollection.updateOne(
+          { date: today, language: language },
+          {
+            $set: {
+              date: today,
+              language: language,
+              questions: formattedQuestions,
+              seed: todaySeed,
+              generatedAt: new Date(),
+              questionCount: formattedQuestions.length
+            }
+          },
+          { upsert: true }
+        );
+        console.log(`💾 Stored daily questions for ${today}, language: ${language} (fallback path)`);
+      } catch (storeError) {
+        console.error('⚠️ Failed to store daily questions:', storeError);
+        // Continue anyway - questions are still returned
+      }
+      
       return res.json({
         success: true,
         questions: formattedQuestions,
         count: formattedQuestions.length,
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         seed: todaySeed,
+        cached: false
       });
     }
     
@@ -431,14 +621,7 @@ router.get('/daily-questions', async (req, res) => {
       return {
         id: q._id.toString(),
         question: q.Question || '',
-        questionHi: q['Question (Hindi)'] || q.Question || '', // Use Hindi field if available
         options: options,
-        optionsHi: [
-          q['Option A (Hindi)'] || q['Option A'] || '',
-          q['Option B (Hindi)'] || q['Option B'] || '',
-          q['Option C (Hindi)'] || q['Option C'] || '',
-          q['Option D (Hindi)'] || q['Option D'] || '',
-        ],
         correctAnswer: correctAnswerIndex,
         difficulty: (q.Difficulty || 'medium').toLowerCase(),
         category: q.Category || 'General',
@@ -450,17 +633,164 @@ router.get('/daily-questions', async (req, res) => {
 
     console.log(`🎯 Sending ${finalQuestions.length} daily quiz questions`);
 
+    // Store today's questions in dailyquestions collection for future retrieval
+    try {
+      await dailyQuestionsCollection.updateOne(
+        { date: today, language: language },
+        {
+          $set: {
+            date: today,
+            language: language,
+            questions: finalQuestions,
+            seed: todaySeed,
+            generatedAt: new Date(),
+            questionCount: finalQuestions.length
+          }
+        },
+        { upsert: true }
+      );
+      console.log(`💾 Stored daily questions for ${today}, language: ${language}`);
+    } catch (storeError) {
+      console.error('⚠️ Failed to store daily questions:', storeError);
+      // Continue anyway - questions are still returned
+    }
+
     res.json({
       success: true,
       questions: finalQuestions,
       count: finalQuestions.length,
-      date: new Date().toISOString().split('T')[0],
+      date: today,
       seed: todaySeed,
+      cached: false
     });
   } catch (error) {
     console.error('Error fetching daily quiz questions:', error);
     res.status(500).json({ 
       error: 'Failed to fetch daily quiz questions',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /api/quiz/mock-test-questions
+ * Fetch mock test questions - randomly selected for practice
+ * Supports multiple languages via query parameter
+ */
+router.get('/mock-test-questions', async (req, res) => {
+  try {
+    // Get language from query parameter (default to english)
+    const language = req.query.language || 'english';
+    
+    // Ensure MongoDB connection
+    await ensureConnection();
+    const geetaDb = client.db('geetaOlympiad');
+    const questionDb = client.db('questiondatabase');
+    
+    // Map language names to collection names
+    const languageCollectionMap = {
+      'english': 'english',
+      'hindi': 'hindi',
+      'marathi': 'marathi',
+      'tamil': 'tamil',
+      'telugu': 'telugu',
+      'kannada': 'kannada',
+      'malayalam': 'malayalam',
+      'gujarati': 'gujarati',
+      'bengali': 'bangla',
+      'odia': 'odia',
+      'nepali': 'nepali',
+    };
+    
+    const collectionName = languageCollectionMap[language] || 'english';
+    const collection = questionDb.collection(collectionName);
+    
+    console.log(`🌍 Fetching mock test questions in language: ${language} from collection: ${collectionName}`);
+
+    // Get quiz configuration
+    const config = await getQuizConfig(geetaDb);
+    const distribution = calculateQuestionDistribution(config);
+
+    console.log(`📋 Fetching mock test questions with config:`, distribution);
+
+    // Fetch ALL questions by difficulty
+    const [allEasyQuestions, allMediumQuestions, allHardQuestions] = await Promise.all([
+      collection
+        .find({ Difficulty: { $regex: /^easy$/i } })
+        .toArray(),
+      collection
+        .find({ Difficulty: { $regex: /^medium$/i } })
+        .toArray(),
+      collection
+        .find({ Difficulty: { $regex: /^hard$/i } })
+        .toArray(),
+    ]);
+
+    console.log(`📊 Available questions: Easy=${allEasyQuestions.length}, Medium=${allMediumQuestions.length}, Hard=${allHardQuestions.length}`);
+
+    let allQuestions = [];
+    
+    // Check if we have enough questions
+    const availableTotal = allEasyQuestions.length + allMediumQuestions.length + allHardQuestions.length;
+    
+    if (availableTotal === 0) {
+      // Fallback: fetch all questions without difficulty filter
+      console.warn('⚠️ No questions found with Difficulty field, fetching all questions as fallback');
+      const totalCount = await collection.countDocuments();
+      
+      if (totalCount > 0) {
+        allQuestions = await collection
+          .find({})
+          .limit(distribution.totalQuestions)
+          .toArray();
+        console.log(`✅ Fetched ${allQuestions.length} questions without difficulty filter`);
+      }
+    } else {
+      // Randomly select questions (no seed for mock test)
+      const selectedEasy = allEasyQuestions.sort(() => Math.random() - 0.5).slice(0, distribution.easy);
+      const selectedMedium = allMediumQuestions.sort(() => Math.random() - 0.5).slice(0, distribution.medium);
+      const selectedHard = allHardQuestions.sort(() => Math.random() - 0.5).slice(0, distribution.hard);
+      
+      allQuestions = [...selectedEasy, ...selectedMedium, ...selectedHard];
+    }
+
+    // Format questions
+    const formattedQuestions = allQuestions.map(q => {
+      const answerMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+      const correctAnswerLetter = q['Answer']?.trim().toUpperCase() || q['Correct Answer']?.trim().toUpperCase();
+      const correctAnswerIndex = answerMap[correctAnswerLetter] ?? 0;
+      
+      const options = [
+        q['Option A'] || '',
+        q['Option B'] || '',
+        q['Option C'] || '',
+        q['Option D'] || '',
+      ];
+      
+      return {
+        id: q._id.toString(),
+        question: q.Question || '',
+        options: options,
+        correctAnswer: correctAnswerIndex,
+        difficulty: (q.Difficulty || 'medium').toLowerCase(),
+        category: q.Category || 'General',
+      };
+    });
+
+    // Shuffle the combined questions randomly
+    const finalQuestions = formattedQuestions.sort(() => Math.random() - 0.5);
+
+    console.log(`🎯 Sending ${finalQuestions.length} mock test questions`);
+
+    res.json({
+      success: true,
+      questions: finalQuestions,
+      count: finalQuestions.length,
+    });
+  } catch (error) {
+    console.error('Error fetching mock test questions:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch mock test questions',
       message: error.message 
     });
   }

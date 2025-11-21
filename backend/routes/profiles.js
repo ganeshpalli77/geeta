@@ -64,15 +64,33 @@ router.post('/', async (req, res) => {
     let referralCreated = false;
     if (referrerProfile) {
       try {
-        await Referral.create(
-          referrerProfile.userId,
-          referrerProfile._id.toString(),
-          referralCode.trim(),
-          userId,
-          profile._id.toString()
-        );
+        const { getDatabase } = await import('../config/database.js');
+        const db = await getDatabase();
+        
+        // Create referral record in 'referrals score' collection
+        const referralRecord = {
+          referrerUserId: referrerProfile.userId,
+          referrerProfileId: referrerProfile._id,
+          referralCode: referralCode.trim().toUpperCase(),
+          referredUserId: userId,
+          referredProfileId: profile._id,
+          referrerCredits: 100, // Credits for referrer
+          referredCredits: 50,  // Credits for new user
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        
+        await db.collection('referrals score').insertOne(referralRecord);
+        
+        // Award 100 credits to referrer
+        await ProfileModel.addCredits(referrerProfile._id.toString(), 100, 'referrals');
+        
+        // Award 50 credits to new profile
+        await ProfileModel.addCredits(profile._id.toString(), 50, 'referrals');
+        
         referralCreated = true;
-        console.log('Referral record created successfully');
+        console.log('Referral record created and credits awarded successfully');
       } catch (referralError) {
         console.error('Error creating referral record:', referralError);
         // Continue anyway - don't fail profile creation due to referral issues

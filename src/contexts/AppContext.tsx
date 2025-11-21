@@ -416,10 +416,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isAdmin: false,
       }));
 
-      // **OPTIMIZED**: Auto-load first profile if available
+      // **OPTIMIZED**: Auto-load profile - check localStorage first for persistence
       if (profiles.length > 0) {
-        console.log('🎯 Loading profile data for:', profiles[0]._id);
-        await loadProfileData(profiles[0]._id);
+        const savedProfileId = localStorage.getItem('selectedProfileId');
+        const profileToLoad = savedProfileId && profiles.find(p => p._id === savedProfileId)
+          ? savedProfileId
+          : profiles[0]._id;
+        
+        console.log('🎯 Loading profile data for:', profileToLoad);
+        await loadProfileData(profileToLoad);
       } else if (syncResult.newUser) {
         console.log('👤 New user - no profiles yet');
       }
@@ -647,6 +652,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         } : null,
       }));
       
+      // Save selected profile to localStorage for persistence
+      localStorage.setItem('selectedProfileId', profileId);
+      
       toast.success('Profile switched!');
     } catch (error) {
       console.error('Error switching profile:', error);
@@ -683,10 +691,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, language: lang }));
   };
 
-  const submitQuiz = async (attemptData: Omit<QuizAttempt, 'id' | 'completedAt'>) => {
+  const submitQuiz = async (attemptData: Omit<QuizAttempt, 'id' | 'completedAt'> & { userId?: string }) => {
     try {
       const newAttempt = await quizAPI.submitQuiz({
         profileId: attemptData.profileId,
+        userId: attemptData.userId || state.user?.id,
         type: attemptData.type,
         questions: attemptData.questions,
         answers: attemptData.answers,

@@ -177,7 +177,7 @@ export function ProfileSelectionPage() {
           >
             ← Back to Profiles
           </button>
-          <ProfileCreationForm />
+          <ProfileCreationForm onSuccess={handleProfileCreated} />
         </div>
       </div>
     );
