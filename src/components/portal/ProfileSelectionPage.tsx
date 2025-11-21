@@ -15,15 +15,22 @@ export function ProfileSelectionPage() {
   useEffect(() => {
     if (user?.id) {
       loadProfiles();
+    } else if (user) {
+      // User exists but no ID yet, stop loading
+      setLoading(false);
     }
   }, [user?.id]);
 
   const loadProfiles = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       const data = await backendAPI.getProfilesByUser(user.id);
+      console.log('Loaded profiles:', data);
       // Ensure data is an array
       const profilesArray = Array.isArray(data) ? data : [];
       setProfiles(profilesArray);
@@ -34,7 +41,11 @@ export function ProfileSelectionPage() {
       console.error('Error loading profiles:', error);
       // Even on error, set empty array so we don't stay in loading state
       setProfiles([]);
-      toast.error('Failed to load profiles');
+      // Don't show error toast if it's just a 404 (no profiles found)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('404')) {
+        toast.error('Failed to load profiles');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,6 +58,11 @@ export function ProfileSelectionPage() {
       await backendAPI.setActiveProfile(user.id, profileId);
       await switchProfile(profileId);
       toast.success('Profile activated! 🎮');
+      
+      // Navigate to dashboard after successful selection
+      setTimeout(() => {
+        window.location.hash = '#dashboard';
+      }, 500);
     } catch (error) {
       console.error('Error selecting profile:', error);
       toast.error('Failed to select profile');

@@ -206,13 +206,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadProfileData = async (profileId: string) => {
     try {
-      const [profile, quizAttempts, videos, slogans, parts] = await Promise.all([
-        profileAPI.getProfile(profileId),
-        quizAPI.getAttemptsByProfile(profileId),
-        eventAPI.getVideosByProfile(profileId),
-        eventAPI.getSlogansByProfile(profileId),
-        imagePuzzleAPI.getCollectedParts(profileId),
-      ]);
+      // Load profile first (this must succeed)
+      const profile = await profileAPI.getProfile(profileId);
+
+      // Load other data with graceful fallbacks for 404s (expected for new profiles)
+      const quizAttempts = await quizAPI.getAttemptsByProfile(profileId).catch(err => {
+        console.log('No quiz attempts yet (expected for new profile)');
+        return [];
+      });
+
+      const videos = await eventAPI.getVideosByProfile(profileId).catch(err => {
+        console.log('No videos yet (expected for new profile)');
+        return [];
+      });
+
+      const slogans = await eventAPI.getSlogansByProfile(profileId).catch(err => {
+        console.log('No slogans yet (expected for new profile)');
+        return [];
+      });
+
+      const parts = await imagePuzzleAPI.getCollectedParts(profileId).catch(err => {
+        console.log('No puzzle parts yet (expected for new profile)');
+        return [];
+      });
 
       // Convert image parts to app format
       const imageParts: ImagePart[] = Array.from({ length: 45 }, (_, i) => {
@@ -234,8 +250,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sloganSubmissions: slogans.map(s => ({ ...s, id: s._id })),
         imageParts,
       }));
+
+      console.log('✅ Profile loaded successfully:', profile.name);
     } catch (error) {
       console.error('Error loading profile data:', error);
+      throw error; // Re-throw so caller knows it failed
     }
   };
 
@@ -308,8 +327,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let apiUser: ApiUser;
       try {
         // Try to get existing user by Supabase ID
-        apiUser = await userAPI.getUser(supabaseUser.id);
-        console.log('Found existing user:', apiUser);
+        const response = await userAPI.getUser(supabaseUser.id);
+        console.log('Found existing user response:', response);
+        
+        // Unwrap the response if it's wrapped
+        apiUser = (response as any).user || response;
+        console.log('Unwrapped user:', apiUser);
       } catch (error) {
         // User doesn't exist in our system yet
         // Create a minimal user object from Supabase data
@@ -504,6 +527,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const createProfile = async (profileData: Omit<UserProfile, 'id' | 'createdAt'>) => {
     if (!state.user) {
       console.error('No user found in state');
+      return;
+    }
+
+    console.log('Current user state:', state.user);
+    console.log('User ID:', state.user.id);
+
+    if (!state.user.id) {
+      console.error('User ID is undefined!');
+      toast.error('User session error. Please log in again.');
       return;
     }
 
