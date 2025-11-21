@@ -283,35 +283,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const handleSupabaseAuth = async (supabaseUser: SupabaseUser, session: Session) => {
     try {
-      // Get user email or phone
-      const email = supabaseUser.email;
-      const phone = supabaseUser.phone;
+      // NEW: Retrieve pending registration from MongoDB
+      let email = supabaseUser.email || '';
+      let phone = supabaseUser.phone || '';
 
-      // Register user in MongoDB backend (new separate collections)
-      let backendUserId: string | undefined;
+      // Try to get from pending registrations using email OR phone
       try {
-        if (email) {
-          // Register with email in email_users collection
-          const { user: emailUser } = await backendAPI.registerEmailUser(email);
-          backendUserId = emailUser._id;
-          console.log('Email user registered in MongoDB:', emailUser);
-        } else if (phone) {
-          // Register with phone in phone_users collection
-          const { user: phoneUser } = await backendAPI.registerPhoneUser(phone);
-          backendUserId = phoneUser._id;
-          console.log('Phone user registered in MongoDB:', phoneUser);
+        const response = await fetch('http://localhost:5000/api/pending-registrations/retrieve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: supabaseUser.email, 
+            phone: supabaseUser.phone 
+          }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          email = data.email;
+          phone = data.phone;
+          console.log('✅ Retrieved pending registration from MongoDB:', { email, phone });
+        } else {
+          console.log('⚠️ No pending registration found, using Supabase data');
         }
+      } catch (err) {
+        console.error('Error retrieving pending registration:', err);
+        // Fall back to Supabase data
+      }
 
-        // Also register in legacy users collection for backward compatibility
-        if (backendUserId) {
-          await backendAPI.registerUser({
-            userId: supabaseUser.id, // Pass Supabase UUID
-            email: email || undefined,
-            phone: phone || undefined,
-          });
+      console.log('� Handling Supabase auth:', { 
+        email, 
+        phone, 
+        userId: supabaseUser.id,
+        supabaseEmail: supabaseUser.email,
+        supabasePhone: supabaseUser.phone
+      });
+
+      // Register user in MongoDB with BOTH email and phone in unified collection
+      try {
+        // Determine which method was used for verification
+        const verifiedWith = supabaseUser.email && !supabaseUser.phone ? 'email' : 
+                            !supabaseUser.email && supabaseUser.phone ? 'phone' : null;
+
+        // Register in unified users collection with both email and phone
+        const { user: registeredUser } = await backendAPI.registerUser({
+          userId: supabaseUser.id, // Supabase UUID
+          email: email,
+          phone: phone,
+          emailVerified: !!email && verifiedWith === 'email',
+          phoneVerified: !!phone && verifiedWith === 'phone',
+          verifiedWith: verifiedWith as 'email' | 'phone' | null,
+        });
+
+        console.log('✅ User registered in unified MongoDB collection:', registeredUser);
+
+        // Update verification status in backend if we know which method was used
+        if (verifiedWith && (verifiedWith === 'email' || verifiedWith === 'phone')) {
+          await backendAPI.verifyUser(supabaseUser.id, verifiedWith);
+          console.log(`✅ Verification status updated: ${verifiedWith}`);
         }
       } catch (error) {
-        console.error('Error registering user in MongoDB:', error);
+        console.error('❌ Error registering user in MongoDB:', error);
         // Continue even if MongoDB registration fails
       }
 
@@ -341,20 +373,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Get user's profiles (if any)
       let profiles: ApiProfile[] = [];
       try {
+        console.log('🔍 Fetching profiles for userId:', supabaseUser.id);
         profiles = await profileAPI.getProfilesByUser(supabaseUser.id);
+        console.log('📋 Profiles fetched:', profiles.length, 'profiles found');
+        console.log('📋 Profile details:', JSON.stringify(profiles, null, 2));
         // Ensure profiles is an array
         if (!Array.isArray(profiles)) {
+          console.warn('⚠️ Profiles is not an array, converting to empty array');
           profiles = [];
         }
       } catch (error) {
         // No profiles yet, that's fine
-        console.log('No profiles found for user:', error);
+        console.log('❌ Error fetching profiles:', error);
+        console.log('No profiles found for user:', supabaseUser.id);
         profiles = [];
       }
 
       const user = convertApiUserToUser(apiUser, profiles);
-      console.log('Converted user object:', user);
-      console.log('User ID after conversion:', user.id);
+      console.log('👤 Converted user object:', user);
+      console.log('🆔 User ID after conversion:', user.id);
+      console.log('📝 Number of profiles in user object:', user.profiles?.length || 0);
 
       setState(prev => ({
         ...prev,
