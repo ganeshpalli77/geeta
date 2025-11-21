@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -25,8 +25,57 @@ import {
 
 // Puzzle Task Page
 export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { currentProfile, imageParts, collectImagePart } = useApp();
-  const [collectedDays, setCollectedDays] = useState<Set<number>>(new Set());
+  const { currentProfile, user } = useApp();
+  const [collectedPieces, setCollectedPieces] = useState<any[]>([]);
+  const [puzzleConfig, setPuzzleConfig] = useState({ totalPieces: 35, imageData: null, creditsPerPiece: 50 });
+  const [loading, setLoading] = useState(true);
+  const [collecting, setCollecting] = useState(false);
+  
+  // Load puzzle config and user's collected pieces
+  useEffect(() => {
+    loadPuzzleData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProfile, user]);
+
+  const loadPuzzleData = async () => {
+    if (!currentProfile || !user) {
+      console.log('Cannot load puzzle data: missing profile or user');
+      return;
+    }
+    
+    try {
+      console.log('Loading puzzle data for user:', user.id, 'profile:', currentProfile.id);
+      
+      // Load puzzle configuration
+      const configRes = await fetch('http://localhost:5000/api/puzzle/config');
+      if (!configRes.ok) {
+        throw new Error(`Config fetch failed: ${configRes.status}`);
+      }
+      const configData = await configRes.json();
+      console.log('Puzzle config loaded:', configData);
+      
+      if (configData.success) {
+        setPuzzleConfig(configData.config);
+      }
+
+      // Load user's collected pieces
+      const piecesRes = await fetch(`http://localhost:5000/api/puzzle/pieces/${user.id}/${currentProfile.id}`);
+      if (!piecesRes.ok) {
+        throw new Error(`Pieces fetch failed: ${piecesRes.status}`);
+      }
+      const piecesData = await piecesRes.json();
+      console.log('Collected pieces loaded:', piecesData);
+      
+      if (piecesData.success) {
+        setCollectedPieces(piecesData.pieces);
+      }
+    } catch (error) {
+      console.error('Error loading puzzle data:', error);
+      toast.error('Failed to load puzzle data');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   if (!currentProfile) {
     return (
@@ -40,30 +89,63 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
     );
   }
 
-  const totalPieces = 35;
+  const totalPieces = puzzleConfig.totalPieces;
 
-  // Create array of puzzle pieces (35 days) combining imageParts and local state
-  const puzzlePieces = Array.from({ length: totalPieces }, (_, i) => ({
-    id: i + 1,
-    collected: imageParts[i]?.collected || collectedDays.has(i + 1),
-  }));
+  // Create array of puzzle pieces
+  const puzzlePieces = Array.from({ length: totalPieces }, (_, i) => {
+    const pieceNumber = i + 1;
+    const collected = collectedPieces.some(p => p.pieceNumber === pieceNumber);
+    return { id: pieceNumber, collected };
+  });
 
-  const collectedParts = puzzlePieces.filter(p => p.collected).length;
+  const collectedParts = collectedPieces.length;
 
-  const handleCollectPuzzlePiece = (dayNumber: number) => {
+  const handleCollectPuzzlePiece = async (pieceNumber: number) => {
     // Check if already collected
-    if (collectedDays.has(dayNumber) || imageParts[dayNumber - 1]?.collected) {
-      toast.info(`Day ${dayNumber} is already collected!`);
+    if (puzzlePieces.find(p => p.id === pieceNumber)?.collected) {
+      toast.info(`Piece ${pieceNumber} is already collected!`);
       return;
     }
 
-    // Add to collected days
-    setCollectedDays(prev => new Set([...prev, dayNumber]));
-    
-    // Also call the collect function for points
-    collectImagePart();
-    
-    toast.success(`🎉 Day ${dayNumber} collected! +50 credits`);
+    if (!user) {
+      toast.error('Please log in to collect puzzle pieces');
+      return;
+    }
+
+    setCollecting(true);
+    try {
+      console.log('Collecting piece:', pieceNumber, 'for user:', user.id, 'profile:', currentProfile.id);
+      
+      const response = await fetch('http://localhost:5000/api/puzzle/collect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          profileId: currentProfile.id,
+          pieceNumber,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Collect response:', data);
+
+      if (data.success) {
+        toast.success(`🎉 Piece ${pieceNumber} collected! +${puzzleConfig.creditsPerPiece} credits`);
+        // Reload puzzle data
+        await loadPuzzleData();
+      } else {
+        toast.error(data.message || 'Failed to collect piece');
+      }
+    } catch (error) {
+      console.error('Error collecting piece:', error);
+      toast.error('Failed to collect puzzle piece: ' + (error as Error).message);
+    } finally {
+      setCollecting(false);
+    }
   };
 
   return (
@@ -112,9 +194,39 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
           </div>
         </div>
 
-        {/* Puzzle Grid - Visual Representation */}
+        {/* Puzzle Image with Revealed Pieces */}
+        {puzzleConfig.imageData && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Your Progress - Image Reveal</h3>
+            <div className="relative w-full max-w-lg mx-auto">
+              <img
+                src={puzzleConfig.imageData}
+                alt="Puzzle"
+                className="w-full h-auto rounded-lg"
+                style={{
+                  filter: collectedParts === 0 ? 'blur(20px) brightness(0.3)' : 'none',
+                }}
+              />
+              {/* Overlay grid showing collected/uncollected pieces */}
+              <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(totalPieces))}, 1fr)` }}>
+                {puzzlePieces.map((piece) => (
+                  <div
+                    key={piece.id}
+                    className="border border-white/20"
+                    style={{
+                      backgroundColor: piece.collected ? 'transparent' : 'rgba(0, 0, 0, 0.7)',
+                      backdropFilter: piece.collected ? 'none' : 'blur(10px)',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Puzzle Grid - Collection Interface */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">35 Days Challenge - Click any day to collect</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{totalPieces} Days Challenge - Click to collect (1 per day)</h3>
           <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-4 border-gray-300">
             <div className="flex flex-wrap gap-3">
               {puzzlePieces.map((piece) => (
@@ -126,14 +238,14 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
                       ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-purple-600 text-white shadow-lg cursor-default'
                       : 'bg-white border-gray-300 text-gray-400 hover:border-purple-400 hover:bg-purple-50 cursor-pointer transform hover:scale-105'
                   }`}
-                  title={piece.collected ? `Day ${piece.id} collected` : `Click to collect Day ${piece.id}`}
-                  disabled={piece.collected}
+                  title={piece.collected ? `Piece ${piece.id} collected` : `Click to collect Piece ${piece.id}`}
+                  disabled={piece.collected || collecting}
                 >
                   {piece.collected ? (
                     <CheckCircle className="w-6 h-6" />
                   ) : (
                     <>
-                      <span className="text-[10px] leading-none">Day</span>
+                      <span className="text-[10px] leading-none">Piece</span>
                       <span className="text-sm font-bold leading-none mt-1">{piece.id}</span>
                     </>
                   )}
@@ -159,15 +271,15 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
         {collectedParts === totalPieces && (
           <div className="text-center p-6 bg-green-50 rounded-lg border-2 border-green-200 mb-6">
             <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-600" />
-            <h3 className="text-xl font-bold text-green-800 mb-2">35-Day Challenge Complete! 🎉</h3>
-            <p className="text-green-700">Congratulations! You've collected all {totalPieces} pieces!</p>
+            <h3 className="text-xl font-bold text-green-800 mb-2">{totalPieces}-Day Challenge Complete! 🎉</h3>
+            <p className="text-green-700">Congratulations! You've collected all {totalPieces} pieces and revealed the complete image!</p>
           </div>
         )}
 
         {/* Info */}
         <div className="p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">
-            💡 <strong>How to collect:</strong> Click on any day box to collect it. Once collected, it will turn purple with a checkmark ✓. Complete all 35 days to unlock the full Bhagavad Geeta artwork! Each day earns you 50 credits.
+            💡 <strong>How to collect:</strong> You can collect ONE piece per day. Click on any piece to collect it. Once collected, it will turn purple with a checkmark ✓ and reveal that part of the image. Complete all {totalPieces} pieces to see the full artwork! Each piece earns you {puzzleConfig.creditsPerPiece} credits.
           </p>
         </div>
       </Card>

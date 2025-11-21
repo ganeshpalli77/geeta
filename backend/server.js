@@ -10,6 +10,7 @@ import pendingRegistrationsRouter from './routes/pendingRegistrations.js';
 import quizRouter from './routes/quiz.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import authRouter from './routes/auth.js';
+import puzzleRouter from './routes/puzzle.js';
 import { initializeDefaultAdmin } from './models/Admin.js';
 import { getDatabase } from './config/database.js';
 // OLD: Disabled - using unified users collection now
@@ -43,6 +44,7 @@ app.use('/api/pending-registrations', pendingRegistrationsRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/puzzle', puzzleRouter);
 // OLD: Disabled - using unified users collection now
 // app.use('/api/email-users', emailUsersRouter);
 // app.use('/api/phone-users', phoneUsersRouter);
