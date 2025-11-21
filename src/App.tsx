@@ -55,7 +55,6 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <>
-        <Header onOpenAuth={handleOpenAuth} isPortalMode={false} />
         <HomePage onOpenAuth={handleOpenAuth} />
         <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
           <DialogContent className="max-w-md p-0">

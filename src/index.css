@@ -6147,6 +6147,11 @@
   --logiqi-purple: #6366f1;
   --logiqi-purple-light: #818cf8;
   --logiqi-purple-dark: #4f46e5;
+  --blue-accent: #3B82F6;
+  --purple-accent: #A855F7;
+  --yellow-accent: #FCD34D;
+  --warm-peach: #FFE4D6;
+  --warm-bg: #FFF8F3;
   --logiqi-blue: #3b82f6;
   --logiqi-blue-light: #60a5fa;
   --logiqi-green: #10b981;
@@ -6660,4 +6665,45 @@ html {
     opacity: var(--tw-exit-opacity, 1);
     transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
   }
+}
+
+/* Custom color utilities for new landing page design */
+.bg-blue-accent {
+  background-color: var(--blue-accent);
+}
+
+.bg-purple-accent {
+  background-color: var(--purple-accent);
+}
+
+.bg-yellow-accent {
+  background-color: var(--yellow-accent);
+}
+
+.bg-warm-peach {
+  background-color: var(--warm-peach);
+}
+
+.bg-warm-bg {
+  background-color: var(--warm-bg);
+}
+
+.text-blue-accent {
+  color: var(--blue-accent);
+}
+
+.text-purple-accent {
+  color: var(--purple-accent);
+}
+
+.text-yellow-accent {
+  color: var(--yellow-accent);
+}
+
+.shadow-elevated {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }

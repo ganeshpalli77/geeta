@@ -1,84 +1,57 @@
-import { Header } from '../Header';
-import { HeroBanner } from '../HeroBanner';
-import { SwamijiMessage } from '../SwamijiMessage';
-import { FeatureBoxes } from '../FeatureBoxes';
-import { EngageBanner } from '../EngageBanner';
-import { CelebrationBoxes } from '../CelebrationBoxes';
-import { Timeline } from '../Timeline';
-import { EventsRounds } from '../EventsRounds';
-import { ParticipantCategories } from '../ParticipantCategories';
-import { TaglineSection } from '../TaglineSection';
-import { GrandFinale } from '../GrandFinale';
-import { CTABanner } from '../CTABanner';
-import { Footer } from '../Footer';
-import { useApp } from '../../contexts/AppContext';
+import Header from '../landing-page/components1/Header';
+import Hero from '../landing-page/components1/Hero';
+import CategoryCards from '../landing-page/components1/CategoryCards';
+import CountdownTimer from '../landing-page/components1/CountdownTimer';
+import ParticipantCategories from '../landing-page/components1/ParticipantCategories';
+import ExploreEngage from '../landing-page/components1/ExploreEngage';
+import Timeline from '../landing-page/components1/Timeline';
+import EventsRounds from '../landing-page/components1/EventsRounds';
+import GrandPrizes from '../landing-page/components1/GrandPrizes';
+import TeacherMessage from '../landing-page/components1/TeacherMessage';
+import FinalCTA from '../landing-page/components1/FinalCTA';
+import Footer from '../landing-page/components1/Footer';
 
 interface HomePageProps {
   onOpenAuth?: (mode: 'login' | 'register') => void;
 }
 
 export function HomePage({ onOpenAuth }: HomePageProps) {
-  const { isAuthenticated } = useApp();
-  
   return (
     <div className="min-h-screen w-full bg-white">
       {/* Header */}
-      {/* <Header onOpenAuth={onOpenAuth} /> */}
+      <Header onOpenAuth={onOpenAuth} />
       
-      {/* Step 2: Hero Banner - Full Width */}
-      <HeroBanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
+      {/* Hero Section */}
+      <Hero onOpenAuth={onOpenAuth} />
       
-      {/* Main content with responsive spacing between sections */}
-      <main className="w-full">
-        <div className="py-8 sm:py-12 md:py-16 lg:py-20">
-          
-          {/* Step 3: Swamiji Message Section - Full Width */}
-          <div className="mb-12 sm:mb-16 md:mb-20 lg:mb-[120px]">
-            <SwamijiMessage />
-          </div>
-          
-          {/* Step 4: Three Feature Boxes */}
-          <FeatureBoxes />
-          
-          {/* Step 5: Engage Banner - Full Width (overlaps with feature boxes) */}
-          <EngageBanner />
-          
-          {/* Step 6: Celebrate-Participate-Connect Boxes */}
-          <CelebrationBoxes />
-          
-          {/* Step 7: Timeline Section - Full Width */}
-          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
-            <Timeline />
-          </div>
-          
-          {/* Step 11: Closing CTA Banner - Full Width */}
-          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
-            <CTABanner onOpenAuth={onOpenAuth} isAuthenticated={isAuthenticated} />
-          </div>
-          
-          {/* Step 8: Events & Rounds Section */}
-          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
-            <EventsRounds />
-          </div>
-          
-          {/* Step 9: Participant Categories */}
-          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
-            <ParticipantCategories />
-          </div>
-          
-          {/* Tagline Section */}
-          <div className="mt-12 sm:mt-16 md:mt-20 lg:mt-[120px]">
-            <TaglineSection />
-          </div>
-          
-          {/* Step 10: Grand Finale & Prizes */}
-          <div className="mt-8 sm:mt-10 md:mt-12 lg:mt-[60px]">
-            <GrandFinale />
-          </div>
-        </div>
-      </main>
+      {/* Category Cards - Learn, Quiz, Win */}
+      <CategoryCards />
       
-      {/* Step 12: Footer - Full Width */}
+      {/* Countdown Timer with Trophy and Mobile */}
+      <CountdownTimer />
+      
+      {/* Participant Categories */}
+      <ParticipantCategories />
+      
+      {/* Explore & Engage */}
+      <ExploreEngage />
+      
+      {/* Timeline */}
+      <Timeline />
+      
+      {/* Events & Rounds */}
+      <EventsRounds />
+      
+      {/* Grand Prizes */}
+      <GrandPrizes />
+      
+      {/* Teacher Message */}
+      <TeacherMessage />
+      
+      {/* Final CTA */}
+      <FinalCTA />
+      
+      {/* Footer */}
       <Footer />
     </div>
   );
