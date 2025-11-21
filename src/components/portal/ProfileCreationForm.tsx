@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Calendar, IdCard, Globe, School } from 'lucide-react';
+import { User, Calendar, IdCard, Globe, School, Gift } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useApp } from '../../contexts/AppContext';
 import { toast } from 'sonner@2.0.3';
@@ -13,6 +13,7 @@ export function ProfileCreationForm() {
     prn: '',
     dob: '',
     category: '',
+    referralCode: '',
     preferredLanguage: 'english',
   });
 
@@ -41,8 +42,14 @@ export function ProfileCreationForm() {
         dob: formData.dob,
         category: formData.category.trim() || 'General',
         preferredLanguage: formData.preferredLanguage,
+        referralCode: formData.referralCode.trim() || undefined,
       });
-      toast.success('⚔️ Warrior profile created! Welcome to the arena! 🏆');
+      
+      if (formData.referralCode.trim()) {
+        toast.success('⚔️ Warrior profile created! +50 bonus credits for using referral code! 🏆');
+      } else {
+        toast.success('⚔️ Warrior profile created! Welcome to the arena! 🏆');
+      }
     } catch (error) {
       console.error('Error creating profile:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create profile';
@@ -140,6 +147,26 @@ export function ProfileCreationForm() {
               placeholder="Enter your school name or category"
               disabled={loading}
             />
+          </div>
+
+          {/* Referral Code */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <Gift className="inline w-4 h-4 mr-2" />
+              Referral Code (Optional)
+            </label>
+            <input
+              type="text"
+              value={formData.referralCode}
+              onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-500 focus:outline-none transition-colors font-semibold uppercase"
+              placeholder="GEETA-XXXX-YYYY"
+              maxLength={15}
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              🎁 Enter a friend's referral code to get 50 bonus credits!
+            </p>
           </div>
 
           {/* Preferred Language */}

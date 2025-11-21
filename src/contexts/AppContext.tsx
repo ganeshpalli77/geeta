@@ -38,6 +38,7 @@ export interface UserProfile {
   dob: string;
   preferredLanguage: string;
   category?: string;
+  referralCode?: string;
   createdAt?: string;
 }
 
@@ -170,6 +171,7 @@ function convertApiProfileToProfile(apiProfile: ApiProfile): UserProfile {
     dob: apiProfile.dob,
     preferredLanguage: apiProfile.preferredLanguage,
     category: apiProfile.category,
+    referralCode: apiProfile.referralCode,
     createdAt: apiProfile.createdAt,
   };
 }

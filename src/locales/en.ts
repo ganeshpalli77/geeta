@@ -83,6 +83,7 @@ export const en = {
     settings: "Settings",
     logout: "Logout",
     rounds: "Rounds",
+    referral: "Referral",
   },
 
   // Dashboard
@@ -325,6 +326,44 @@ export const en = {
     hoursAgo: "hours ago",
     minutesAgo: "minutes ago",
     justNow: "Just now",
+  },
+
+  // Referral
+  referral: {
+    title: "Refer & Earn",
+    description: "Share your unique referral code and earn rewards when friends join!",
+    yourCode: "Your Unique Referral Code",
+    shareCode: "Share this code with friends and family",
+    copyCode: "Copy Code",
+    copyLink: "Copy Link",
+    share: "Share More Options",
+    stats: {
+      title: "Your Referral Stats",
+      total: "Total Referrals",
+      credits: "Credits Earned",
+      active: "Active Referrals",
+    },
+    howItWorks: {
+      title: "How It Works",
+      step1: "Share your unique referral code with friends and family",
+      step2: "When they create their profile, they enter your code and both get bonus credits",
+      step3: "Get 100 credits for each successful referral",
+    },
+    benefits: {
+      title: "Referral Benefits",
+      item1: {
+        title: "100 Credits Per Referral",
+        description: "Earn 100 credits every time someone signs up using your code",
+      },
+      item2: {
+        title: "Your Friend Gets 50 Credits",
+        description: "Your referred friend also receives 50 bonus credits to start",
+      },
+      item3: {
+        title: "Unlimited Referrals",
+        description: "No limit on how many people you can refer. More referrals = More rewards!",
+      },
+    },
   },
 
   // Languages

@@ -29,6 +29,7 @@ export interface Profile {
   dob: string;
   preferredLanguage: string;
   category?: string; // Can be any string (school name, age group, etc.)
+  referralCode?: string;
   createdAt?: string;
   updatedAt?: string;
 }

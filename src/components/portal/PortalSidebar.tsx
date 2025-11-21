@@ -1,4 +1,4 @@
-import { Home, Trophy, Award, BookOpen, Settings, LogOut, Lock } from 'lucide-react';
+import { Home, Trophy, Award, BookOpen, Settings, LogOut, Lock, Users2 } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { useApp } from '../../contexts/AppContext';
@@ -149,6 +149,19 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
           >
             <Award className="w-4 h-4" />
             {t.nav.rewards}
+          </button>
+
+          <button
+            onClick={() => onNavigate('referral')}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold",
+              currentPage === 'referral'
+                ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/30"
+                : "text-gray-600 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-600"
+            )}
+          >
+            <Users2 className="w-4 h-4" />
+            Referral
           </button>
 
           <button

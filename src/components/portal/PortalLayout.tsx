@@ -6,6 +6,7 @@ import { Dashboard } from './Dashboard';
 import { Round1Page, Round2Page, Round3Page, Round4Page, Round5Page, Round6Page, Round7Page } from './RoundPage';
 import { LeaderboardNew } from './LeaderboardNew';
 import { RewardsPage } from './RewardsPage';
+import { ReferralPage } from './ReferralPage';
 import { NotificationsPage } from './NotificationsPage';
 import { ProfileNew } from './ProfileNew';
 import { NewQuizPage } from './NewQuizPage';
@@ -93,6 +94,8 @@ export function PortalLayout() {
         return <LeaderboardNew />;
       case 'rewards':
         return <RewardsPage />;
+      case 'referral':
+        return <ReferralPage />;
       case 'notifications':
         return <NotificationsPage />;
       case 'profile':
