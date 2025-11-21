@@ -9,9 +9,7 @@
     "dev": "nodemon server.js",
     "prod": "NODE_ENV=production node server.js",
     "setup:slogan": "node scripts/setupSloganFeature.js",
-    "migrate:credits": "node scripts/migrateUserCredits.js",
-    "verify:credits": "node scripts/verifyUserCredits.js",
-    "sync:missing": "node scripts/syncMissingProfiles.js"
+    "migrate:credits": "node scripts/migrateUserCredits.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
