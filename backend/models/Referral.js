@@ -35,11 +35,18 @@ class Referral {
 
   static async getReferralStats(profileId) {
     const db = await getDatabase();
-    const referrals = await db.collection('referrals').find({ referrerProfileId: profileId }).toArray();
+    const { ObjectId } = await import('mongodb');
+    
+    // Query the 'referrals score' collection for this profile's referrals
+    const referrals = await db.collection('referrals score').find({ 
+      referrerProfileId: new ObjectId(profileId) 
+    }).toArray();
     
     const totalReferrals = referrals.length;
     const activeReferrals = referrals.filter(r => r.status === 'active').length;
-    const totalCreditsEarned = referrals.reduce((sum, r) => sum + (r.creditsAwarded || 0), 0);
+    
+    // Calculate total credits earned (100 per referral for the referrer)
+    const totalCreditsEarned = referrals.reduce((sum, r) => sum + (r.referrerCredits || 100), 0);
 
     return {
       totalReferrals,
@@ -59,30 +66,25 @@ class Referral {
   static async findProfileByReferralCode(referralCode) {
     const db = await getDatabase();
     
-    // Parse the referral code to extract user and profile parts
+    // Validate referral code format
     const parts = referralCode.split('-');
     if (parts.length !== 3 || parts[0] !== 'GEETA') {
+      console.log('❌ Invalid referral code format:', referralCode);
       return null;
     }
     
-    const userPart = parts[1];
-    const profilePart = parts[2];
+    // Query the database directly using the referralCode field
+    const profile = await db.collection('profiles').findOne({ 
+      referralCode: referralCode.toUpperCase() 
+    });
     
-    // Find the profile that matches this pattern
-    const profiles = await db.collection('profiles').find({}).toArray();
-    
-    for (const profile of profiles) {
-      const userId = profile.userId;
-      const profileId = profile._id.toString();
-      
-      // Check if this profile's code matches
-      if (userId.substring(0, 4).toUpperCase() === userPart &&
-          profileId.substring(profileId.length - 4).toUpperCase() === profilePart) {
-        return profile;
-      }
+    if (profile) {
+      console.log('✅ Found profile for referral code:', referralCode, 'Profile ID:', profile._id);
+    } else {
+      console.log('❌ No profile found for referral code:', referralCode);
     }
     
-    return null;
+    return profile;
   }
 }
 

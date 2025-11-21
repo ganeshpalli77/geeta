@@ -142,7 +142,7 @@ export class ProfileModel {
   static async addCredits(profileId, amount, source = 'slogans') {
     const collection = await this.getCollection();
     
-    const validSources = ['slogans', 'quizzes', 'puzzles', 'reels', 'shlokas', 'referrals'];
+    const validSources = ['slogans', 'quizzes', 'puzzles', 'reels', 'shlokas', 'referrals', 'dailyQuiz', 'mockTest', 'events', 'videos'];
     if (!validSources.includes(source)) {
       throw new Error(`Invalid credit source. Must be one of: ${validSources.join(', ')}`);
     }
@@ -164,6 +164,21 @@ export class ProfileModel {
       { returnDocument: 'after' }
     );
 
+    // Also update user credits collection
+    try {
+      const UserCredits = (await import('./UserCredits.js')).default;
+      await UserCredits.addCredits(
+        result.userId,
+        profileId,
+        amount,
+        source,
+        `Earned ${amount} credits from ${source}`
+      );
+    } catch (error) {
+      console.error('Error syncing to user credits:', error);
+      // Don't fail the operation if sync fails
+    }
+
     return result;
   }
 
@@ -171,8 +186,9 @@ export class ProfileModel {
    * Deduct credits from a profile
    * @param {string} profileId - Profile ID
    * @param {number} amount - Amount of credits to deduct
+   * @param {string} reason - Reason for deduction
    */
-  static async deductCredits(profileId, amount) {
+  static async deductCredits(profileId, amount, reason = 'Purchase') {
     const collection = await this.getCollection();
     
     // First check if profile has enough credits
@@ -199,6 +215,20 @@ export class ProfileModel {
       },
       { returnDocument: 'after' }
     );
+
+    // Also update user credits collection
+    try {
+      const UserCredits = (await import('./UserCredits.js')).default;
+      await UserCredits.deductCredits(
+        result.userId,
+        profileId,
+        amount,
+        reason
+      );
+    } catch (error) {
+      console.error('Error syncing deduction to user credits:', error);
+      // Don't fail the operation if sync fails
+    }
 
     return result;
   }

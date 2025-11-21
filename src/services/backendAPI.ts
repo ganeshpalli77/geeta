@@ -24,6 +24,20 @@ export interface BackendProfile {
   preferredLanguage: string;
   category?: string;
   isActive?: boolean;
+  referralCode?: string;
+  credits?: {
+    total: number;
+    available: number;
+    spent?: number;
+    earned?: {
+      referrals?: number;
+      quizzes?: number;
+      slogans?: number;
+      puzzles?: number;
+      videos?: number;
+      [key: string]: number | undefined;
+    };
+  };
   createdAt: string;
   updatedAt: string;
 }

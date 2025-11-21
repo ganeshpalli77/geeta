@@ -37,14 +37,17 @@ router.post('/', async (req, res) => {
     // Validate referral code if provided
     let referrerProfile = null;
     if (referralCode && referralCode.trim()) {
+      console.log('🔍 Validating referral code:', referralCode.trim().toUpperCase());
       referrerProfile = await Referral.findProfileByReferralCode(referralCode.trim());
       if (!referrerProfile) {
-        console.log('Invalid referral code:', referralCode);
+        console.log('❌ Invalid referral code:', referralCode);
         return res.status(400).json({
           error: 'Invalid referral code'
         });
       }
-      console.log('Valid referral code from profile:', referrerProfile._id);
+      console.log('✅ Valid referral code from profile:', referrerProfile._id, 'Name:', referrerProfile.name);
+    } else {
+      console.log('ℹ️ No referral code provided');
     }
 
     const profile = await ProfileModel.createProfile({
@@ -60,10 +63,24 @@ router.post('/', async (req, res) => {
     console.log('Profile _id:', profile._id);
     console.log('Profile _id type:', typeof profile._id);
 
+    // Initialize user credits entry for new profile
+    try {
+      console.log('💳 Initializing user credits for new profile...');
+      const UserCredits = (await import('../models/UserCredits.js')).default;
+      
+      // Create user credits entry with 0 credits initially
+      await UserCredits.getOrCreateUserCredits(userId, profile._id.toString());
+      console.log('✅ User credits entry created');
+    } catch (creditsError) {
+      console.error('❌ Error initializing user credits:', creditsError);
+      // Continue anyway - don't fail profile creation
+    }
+
     // If referral code was used, create referral record and award credits
     let referralCreated = false;
     if (referrerProfile) {
       try {
+        console.log('🎁 Processing referral rewards...');
         const { getDatabase } = await import('../config/database.js');
         const db = await getDatabase();
         
@@ -81,22 +98,32 @@ router.post('/', async (req, res) => {
           updatedAt: new Date(),
         };
         
-        await db.collection('referrals score').insertOne(referralRecord);
+        console.log('💾 Inserting referral record:', referralRecord);
+        const insertResult = await db.collection('referrals score').insertOne(referralRecord);
+        console.log('✅ Referral record inserted with ID:', insertResult.insertedId);
         
         // Award 100 credits to referrer
+        console.log('💰 Awarding 100 credits to referrer:', referrerProfile._id.toString());
         await ProfileModel.addCredits(referrerProfile._id.toString(), 100, 'referrals');
+        console.log('✅ Referrer credits awarded');
         
         // Award 50 credits to new profile
+        console.log('💰 Awarding 50 credits to new user:', profile._id.toString());
         await ProfileModel.addCredits(profile._id.toString(), 50, 'referrals');
+        console.log('✅ New user credits awarded');
         
         referralCreated = true;
-        console.log('Referral record created and credits awarded successfully');
+        console.log('🎉 Referral record created and credits awarded successfully!');
       } catch (referralError) {
-        console.error('Error creating referral record:', referralError);
+        console.error('❌ Error creating referral record:', referralError);
+        console.error('❌ Error stack:', referralError.stack);
         // Continue anyway - don't fail profile creation due to referral issues
       }
     }
 
+    // Get updated profile with credits
+    const updatedProfile = await ProfileModel.findProfileById(profile._id.toString());
+    
     res.status(201).json({
       success: true,
       profile: {
@@ -108,9 +135,12 @@ router.post('/', async (req, res) => {
         preferredLanguage: profile.preferredLanguage,
         category: profile.category,
         referralCode: profile.referralCode,
+        isActive: profile.isActive,
+        credits: updatedProfile?.credits || profile.credits, // Include updated credits
         createdAt: profile.createdAt,
       },
       referralApplied: referralCreated,
+      creditsAwarded: referralCreated ? 50 : 0,
     });
   } catch (error) {
     console.error('Create profile error:', error);
@@ -166,7 +196,7 @@ router.get('/user/:userId', async (req, res) => {
     console.log('📋 Found profiles:', profiles.length);
     console.log('📋 Profile details:', profiles.map(p => ({ id: p._id.toString(), name: p.name, userId: p.userId })));
 
-    // Serialize profiles to ensure _id is a string
+    // Serialize profiles to ensure _id is a string and include credits
     const serializedProfiles = profiles.map(profile => ({
       _id: profile._id.toString(),
       userId: profile.userId,
@@ -177,6 +207,7 @@ router.get('/user/:userId', async (req, res) => {
       category: profile.category,
       referralCode: profile.referralCode,
       isActive: profile.isActive,
+      credits: profile.credits || { total: 0, available: 0, spent: 0, earned: {} }, // ✅ Include credits
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     }));

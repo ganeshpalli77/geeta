@@ -588,7 +588,7 @@ export function NewQuizPage() {
                 {isPassed ? '🎉 Congratulations!' : '💪 Keep Practicing!'}
               </h1>
               <p className="text-xl text-white/80 mb-8">
-                You scored {results.score} points
+                You scored {results.score} credits
               </p>
               
               <div className="flex justify-center gap-8 mb-8">

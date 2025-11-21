@@ -22,6 +22,7 @@ import puzzleRouter from './routes/puzzle.js';
 import sloganRouter from './routes/slogan.js';
 import reelRouter from './routes/reel.js';
 import referralsRouter from './routes/referrals.js';
+import userCreditsRouter from './routes/userCredits.js';
 import { initializeDefaultAdmin } from './models/Admin.js';
 import { getDatabase } from './config/database.js';
 
@@ -218,6 +219,13 @@ app.use('/api/referrals',
   cacheMiddleware(2 * 60 * 1000), // Cache for 2 minutes
   invalidateCacheMiddleware(['cache:/api/referrals/', 'cache:/api/profiles/']),
   referralsRouter
+);
+
+// User Credits routes - with caching
+app.use('/api/user-credits', 
+  cacheMiddleware(2 * 60 * 1000), // Cache for 2 minutes
+  invalidateCacheMiddleware(['cache:/api/user-credits/']),
+  userCreditsRouter
 );
 
 // ============================================================================
