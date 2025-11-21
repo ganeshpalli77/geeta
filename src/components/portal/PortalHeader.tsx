@@ -38,18 +38,23 @@ interface PortalHeaderProps {
 }
 
 export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
-  const { currentProfile, language, changeLanguage, logout, user } = useApp();
+  const { currentProfile, language, changeLanguage, logout, user, isAdmin } = useApp();
   const { isDark, toggleTheme } = useTheme();
   const t = useTranslation(language);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigation = [
-    { id: 'home', label: t('home'), icon: Home },
-    { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
-    { id: 'quiz', label: t('quiz'), icon: BookOpen },
-    { id: 'events', label: t('events'), icon: Calendar },
-    { id: 'leaderboard', label: t('leaderboard'), icon: Trophy },
-  ];
+  const navigation = isAdmin
+    ? [
+        { id: 'admin', label: 'Admin Dashboard', icon: LayoutDashboard },
+        { id: 'home', label: t('home'), icon: Home },
+      ]
+    : [
+        { id: 'home', label: t('home'), icon: Home },
+        { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
+        { id: 'quiz', label: t('quiz'), icon: BookOpen },
+        { id: 'events', label: t('events'), icon: Calendar },
+        { id: 'leaderboard', label: t('leaderboard'), icon: Trophy },
+      ];
 
   const handleNavigation = (page: string) => {
     onNavigate(page);
@@ -129,8 +134,38 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
               {language === 'en' ? 'हिं' : 'EN'}
             </Button>
 
-            {/* Profile Menu */}
-            {currentProfile && (
+            {/* Profile Menu / Admin Menu */}
+            {isAdmin ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10 border-2 border-[#D97706]">
+                      <AvatarFallback className="bg-gradient-to-br from-[#D97706] to-[#F59E0B] text-white">
+                        A
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center gap-2 p-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gradient-to-br from-[#D97706] to-[#F59E0B] text-white">
+                        A
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-semibold">Admin</p>
+                      <p className="text-xs text-gray-500">Administrator</p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : currentProfile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -164,7 +199,7 @@ export function PortalHeader({ currentPage, onNavigate }: PortalHeaderProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            ) : null}
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
