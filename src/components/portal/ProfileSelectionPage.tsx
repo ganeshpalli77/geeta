@@ -15,8 +15,8 @@ export function ProfileSelectionPage() {
   useEffect(() => {
     if (user?.id) {
       loadProfiles();
-    } else if (user) {
-      // User exists but no ID yet, stop loading
+    } else if (user !== undefined) {
+      // User object exists but no ID - shouldn't happen but handle it
       setLoading(false);
     }
   }, [user?.id]);

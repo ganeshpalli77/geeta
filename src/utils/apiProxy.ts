@@ -8,6 +8,7 @@ import { AUTH_MODE, API_BASE_URL, isMockMode, isSupabaseMode, ADMIN_CREDENTIALS 
 // Derived configuration flags
 const USE_MOCK_API = isMockMode();
 const USE_SUPABASE_AUTH = isSupabaseMode();
+const USE_BACKEND_API = AUTH_MODE === 'nodejs';
 
 // Types
 export interface User {
@@ -221,8 +222,6 @@ export const authAPI = {
     }
   },
 };
-
-// ============================================================================
 // USER API
 // ============================================================================
 
@@ -234,7 +233,8 @@ export const userAPI = {
       if (!user) throw new Error('User not found');
       return user;
     }
-    return apiCall(`/users/${userId}`, 'GET');
+    const response = await apiCall<{ success: boolean; user: User }>(`/users/${userId}`, 'GET');
+    return response.user;
   },
 
   // Update user
@@ -243,18 +243,18 @@ export const userAPI = {
       mockDb.updateById('users', userId, { $set: updates });
       return mockDb.findById('users', userId) as User;
     }
-    return apiCall(`/users/${userId}`, 'PUT', updates);
+    const response = await apiCall<{ success: boolean; user: User }>(`/users/${userId}`, 'PUT', updates);
+    return response.user;
   },
 };
 
-// ============================================================================
 // PROFILE API
 // ============================================================================
 
 export const profileAPI = {
   // Create profile
   createProfile: async (profileData: Omit<Profile, '_id' | 'createdAt' | 'updatedAt'>): Promise<Profile> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
+    if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
       // If category not provided, determine based on age
       let category = profileData.category;
       if (!category) {
@@ -265,68 +265,84 @@ export const profileAPI = {
         else category = 'senior';
       }
 
-      const profile = mockDb.insertOne('profiles', { ...profileData, category }) as Profile;
+      if (AUTH_MODE === 'nodejs') {
+        return apiCall('/profiles', 'POST', { ...profileData, category });
+      } else {
+        const profile = mockDb.insertOne('profiles', { ...profileData, category }) as Profile;
 
-      // Update user's profiles array
-      mockDb.updateById('users', profileData.userId, {
-        $push: { profiles: profile._id }
-      });
+        // Update user's profiles array
+        mockDb.updateById('users', profileData.userId, {
+          $push: { profiles: profile._id }
+        });
 
-      return profile;
+        return profile;
+      }
     }
     return apiCall('/profiles', 'POST', profileData);
   },
 
   // Get profiles by user ID
   getProfilesByUser: async (userId: string): Promise<Profile[]> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
-      return mockDb.find('profiles', { userId }) as Profile[];
+    if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
+      if (AUTH_MODE === 'nodejs') {
+        return apiCall(`/profiles/user/${userId}`, 'GET');
+      } else {
+        return mockDb.find('profiles', { userId }) as Profile[];
+      }
     }
     return apiCall(`/profiles/user/${userId}`, 'GET');
   },
 
   // Get profile by ID
   getProfile: async (profileId: string): Promise<Profile> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
-      const profile = mockDb.findById('profiles', profileId) as Profile | null;
-      if (!profile) throw new Error('Profile not found');
-      return profile;
+    if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
+      if (AUTH_MODE === 'nodejs') {
+        return apiCall(`/profiles/${profileId}`, 'GET');
+      } else {
+        const profile = mockDb.findById('profiles', profileId) as Profile | null;
+        if (!profile) throw new Error('Profile not found');
+        return profile;
+      }
     }
     return apiCall(`/profiles/${profileId}`, 'GET');
   },
 
   // Update profile
   updateProfile: async (profileId: string, updates: Partial<Profile>): Promise<Profile> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
-      mockDb.updateById('profiles', profileId, { $set: updates });
-      return mockDb.findById('profiles', profileId) as Profile;
+    if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
+      if (AUTH_MODE === 'nodejs') {
+        return apiCall(`/profiles/${profileId}`, 'PUT', updates);
+      } else {
+        mockDb.updateById('profiles', profileId, { $set: updates });
+        return mockDb.findById('profiles', profileId) as Profile;
+      }
     }
     return apiCall(`/profiles/${profileId}`, 'PUT', updates);
   },
 
   // Delete profile
   deleteProfile: async (profileId: string): Promise<void> => {
-    if (USE_MOCK_API || USE_SUPABASE_AUTH) {
-      // Remove profile
-      mockDb.deleteById('profiles', profileId);
-      // Remove from user's profiles array
-      const users = mockDb.find('users', {}) as User[];
-      users.forEach(user => {
-        if (user.profiles.includes(profileId)) {
-          mockDb.updateById('users', user._id, {
-            $pull: { profiles: profileId }
-          });
-        }
-      });
+    if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
+      if (AUTH_MODE === 'nodejs') {
+        await apiCall(`/profiles/${profileId}`, 'DELETE');
+      } else {
+        // Remove profile
+        mockDb.deleteById('profiles', profileId);
+        // Remove from user's profiles array
+        const users = mockDb.find('users', {}) as User[];
+        users.forEach(user => {
+          if (user.profiles.includes(profileId)) {
+            mockDb.updateById('users', user._id, {
+              $pull: { profiles: profileId }
+            });
+          }
+        });
+      }
     } else {
       await apiCall(`/profiles/${profileId}`, 'DELETE');
     }
   },
 };
-
-// ============================================================================
-// QUIZ API
-// ============================================================================
 
 export const quizAPI = {
   // Submit quiz attempt
@@ -606,9 +622,21 @@ export interface QuizQuestion {
 export const quizQuestionsAPI = {
   // Get quiz questions
   getQuestions: async (
-    type: 'mock' | 'quiz1' | 'quiz2' | 'quiz3',
+    type: 'mock' | 'quiz1' | 'quiz2' | 'quiz3' | 'daily',
     language: string = 'english'
   ): Promise<QuizQuestion[]> => {
+    // Try MongoDB first for daily quiz
+    if (type === 'daily') {
+      try {
+        const { getDailyQuizQuestions } = await import('../services/quizService');
+        const questions = await getDailyQuizQuestions();
+        console.log('✅ Loaded daily quiz questions from MongoDB');
+        return questions;
+      } catch (error) {
+        console.warn('⚠️ Failed to load from MongoDB, falling back to mock data:', error);
+      }
+    }
+
     if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       // Import quiz data
       const { getQuizQuestions } = await import('./mockQuizData');
@@ -617,7 +645,10 @@ export const quizQuestionsAPI = {
       let count = 10;
       let difficulty: 'easy' | 'medium' | 'hard' | 'expert' | undefined;
       
-      if (type === 'mock') {
+      if (type === 'daily') {
+        count = 5;
+        difficulty = 'easy';
+      } else if (type === 'mock') {
         count = 10;
         difficulty = 'easy';
       } else if (type === 'quiz1') {
@@ -635,6 +666,19 @@ export const quizQuestionsAPI = {
     }
     return apiCall(`/quiz/questions/${type}`, 'GET', undefined, language);
   },
+
+  // Get daily quiz questions (5 mixed difficulty questions)
+  getDailyQuestions: async (): Promise<QuizQuestion[]> => {
+    try {
+      const { getDailyQuizQuestions } = await import('../services/quizService');
+      return await getDailyQuizQuestions();
+    } catch (error) {
+      console.error('Error fetching daily quiz questions:', error);
+      // Fallback to mock data
+      const { getQuizQuestions } = await import('./mockQuizData');
+      return getQuizQuestions('english', { count: 5, difficulty: 'easy' });
+    }
+  },
 };
 
 // ============================================================================
@@ -646,7 +690,7 @@ export interface RoundTask {
   roundNumber: number;
   title: string;
   description: string;
-  type: 'quiz' | 'video' | 'slogan' | 'essay' | 'creative';
+  type: 'quiz' | 'video' | 'slogan' | 'essay' | 'creative' | 'puzzle';
   status: 'locked' | 'unlocked' | 'in-progress' | 'completed';
   points: number;
   dueDate?: string;
@@ -663,8 +707,8 @@ export const roundsAPI = {
           {
             id: 'r1-t1',
             roundNumber: 1,
-            title: 'Introduction Quiz',
-            description: 'Test your basic knowledge of Bhagavad Geeta',
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
             type: 'quiz',
             status: 'unlocked',
             points: 100,
@@ -672,34 +716,205 @@ export const roundsAPI = {
           {
             id: 'r1-t2',
             roundNumber: 1,
-            title: 'Introduction Video',
-            description: 'Share your understanding in a short video',
-            type: 'video',
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
             status: 'unlocked',
             points: 50,
+          },
+          {
+            id: 'r1-t3',
+            roundNumber: 1,
+            title: 'Create a Slogan',
+            description: 'Create an inspiring slogan based on Bhagavad Geeta',
+            type: 'slogan',
+            status: 'unlocked',
+            points: 75,
+          },
+          {
+            id: 'r1-t4',
+            roundNumber: 1,
+            title: 'Create a Reel',
+            description: 'Create a short video reel sharing your understanding',
+            type: 'video',
+            status: 'unlocked',
+            points: 100,
           },
         ],
         2: [
           {
             id: 'r2-t1',
             roundNumber: 2,
-            title: 'Interpretation Quiz',
-            description: 'Interpret key verses from the Geeta',
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
             type: 'quiz',
             status: 'unlocked',
-            points: 150,
+            points: 100,
           },
           {
             id: 'r2-t2',
+            roundNumber: 2,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r2-t3',
             roundNumber: 2,
             title: 'Essay Writing',
             description: 'Write an essay on your favorite verse',
             type: 'essay',
             status: 'unlocked',
+            points: 150,
+          },
+        ],
+        3: [
+          {
+            id: 'r3-t1',
+            roundNumber: 3,
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r3-t2',
+            roundNumber: 3,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r3-t3',
+            roundNumber: 3,
+            title: 'Creative Task',
+            description: 'Express your creativity with a Geeta-inspired project',
+            type: 'creative',
+            status: 'unlocked',
+            points: 125,
+          },
+        ],
+        4: [
+          {
+            id: 'r4-t1',
+            roundNumber: 4,
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r4-t2',
+            roundNumber: 4,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r4-t3',
+            roundNumber: 4,
+            title: 'Video Submission',
+            description: 'Share your understanding through a video',
+            type: 'video',
+            status: 'unlocked',
+            points: 100,
+          },
+        ],
+        5: [
+          {
+            id: 'r5-t1',
+            roundNumber: 5,
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r5-t2',
+            roundNumber: 5,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r5-t3',
+            roundNumber: 5,
+            title: 'Slogan Creation',
+            description: 'Create a meaningful slogan inspired by the Geeta',
+            type: 'slogan',
+            status: 'unlocked',
             points: 75,
           },
         ],
-        // Add more rounds as needed
+        6: [
+          {
+            id: 'r6-t1',
+            roundNumber: 6,
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r6-t2',
+            roundNumber: 6,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r6-t3',
+            roundNumber: 6,
+            title: 'Essay Writing',
+            description: 'Write a reflective essay on Geeta teachings',
+            type: 'essay',
+            status: 'unlocked',
+            points: 150,
+          },
+        ],
+        7: [
+          {
+            id: 'r7-t1',
+            roundNumber: 7,
+            title: 'Daily Quiz',
+            description: 'Complete today\'s daily quiz challenge',
+            type: 'quiz',
+            status: 'unlocked',
+            points: 100,
+          },
+          {
+            id: 'r7-t2',
+            roundNumber: 7,
+            title: 'Collect Today\'s Puzzle Piece',
+            description: 'Collect your daily puzzle piece to complete the image',
+            type: 'puzzle',
+            status: 'unlocked',
+            points: 50,
+          },
+          {
+            id: 'r7-t3',
+            roundNumber: 7,
+            title: 'Final Creative Project',
+            description: 'Complete your final creative project showcasing your journey',
+            type: 'creative',
+            status: 'unlocked',
+            points: 200,
+          },
+        ],
       };
 
       return roundTasks[roundNumber] || [];
