@@ -1,5 +1,5 @@
 import React from 'react';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { 
   authAPI, 
   userAPI, 
@@ -152,6 +152,63 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ============================================================================
+// PERFORMANCE OPTIMIZATIONS
+// ============================================================================
+
+// Profile cache to prevent duplicate fetches
+const profileCache = new Map<string, { profiles: ApiProfile[], timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds
+let profileFetchPromise: Promise<ApiProfile[]> | null = null;
+
+// Optimized profile fetching with caching
+async function fetchProfilesOptimized(userId: string, forceRefresh = false): Promise<ApiProfile[]> {
+  // Check cache first
+  if (!forceRefresh) {
+    const cached = profileCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.profiles;
+    }
+  }
+
+  // Prevent duplicate simultaneous fetches
+  if (profileFetchPromise) {
+    return profileFetchPromise;
+  }
+
+  // Fetch profiles
+  profileFetchPromise = (async () => {
+    try {
+      const profiles = await profileAPI.getProfilesByUser(userId);
+      const validProfiles = Array.isArray(profiles) ? profiles : [];
+      
+      // Update cache
+      profileCache.set(userId, {
+        profiles: validProfiles,
+        timestamp: Date.now()
+      });
+
+      return validProfiles;
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+      return [];
+    } finally {
+      profileFetchPromise = null;
+    }
+  })();
+
+  return profileFetchPromise;
+}
+
+// Clear cache when profiles are modified
+function clearProfileCache(userId: string) {
+  profileCache.delete(userId);
+}
+
+// ============================================================================
+// TYPE CONVERTERS
+// ============================================================================
+
 // Convert API types to app types
 function convertApiUserToUser(apiUser: ApiUser, profiles: ApiProfile[]): User {
   return {
@@ -164,8 +221,11 @@ function convertApiUserToUser(apiUser: ApiUser, profiles: ApiProfile[]): User {
 }
 
 function convertApiProfileToProfile(apiProfile: ApiProfile): UserProfile {
+  // Some responses might already use "id" instead of "_id", so normalize it here
+  const profileId = (apiProfile as any)._id || (apiProfile as any).id || '';
+
   return {
-    id: apiProfile._id,
+    id: profileId,
     name: apiProfile.name,
     prn: apiProfile.prn,
     dob: apiProfile.dob,
@@ -181,6 +241,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initializeMockData();
   }, []);
+
+  // Prevent duplicate auth processing
+  const authProcessingRef = useRef(false);
+  const lastAuthUserIdRef = useRef<string | null>(null);
 
   const [state, setState] = useState<AppState>({
     user: null,
@@ -234,6 +298,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       });
 
+      // **OPTIMIZED**: Use cached profiles
+      let allProfiles: ApiProfile[] = [];
+      if (state.user) {
+        allProfiles = await fetchProfilesOptimized(state.user.id);
+      }
+
       setState(prev => ({
         ...prev,
         currentProfile: convertApiProfileToProfile(profile),
@@ -242,6 +312,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         videoSubmissions: videos.map(v => ({ ...v, id: v._id })),
         sloganSubmissions: slogans.map(s => ({ ...s, id: s._id })),
         imageParts,
+        user: prev.user && allProfiles.length > 0 ? {
+          ...prev.user,
+          currentProfileId: profileId,
+          profiles: allProfiles.map(convertApiProfileToProfile),
+        } : prev.user,
       }));
 
       console.log('✅ Profile loaded successfully:', profile.name);
@@ -288,8 +363,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let phone = supabaseUser.phone || '';
 
       // Try to get from pending registrations using email OR phone
+      // Note: This endpoint may not exist yet, so we silently fall back to Supabase data
       try {
-        const response = await fetch('http://localhost:5000/api/pending-registrations/retrieve', {
+        const apiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/pending-registrations/retrieve`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -303,12 +380,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           email = data.email;
           phone = data.phone;
           console.log('✅ Retrieved pending registration from MongoDB:', { email, phone });
-        } else {
-          console.log('⚠️ No pending registration found, using Supabase data');
         }
       } catch (err) {
-        console.error('Error retrieving pending registration:', err);
-        // Fall back to Supabase data
+        // Silently fall back to Supabase data - this endpoint is optional
+        console.log('⚠️ Pending registration not found, using Supabase data');
       }
 
       console.log('� Handling Supabase auth:', { 
@@ -319,32 +394,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabasePhone: supabaseUser.phone
       });
 
-      // Register user in MongoDB with BOTH email and phone in unified collection
+      // Check if user already exists, only register if they don't
       try {
-        // Determine which method was used for verification
-        const verifiedWith = supabaseUser.email && !supabaseUser.phone ? 'email' : 
-                            !supabaseUser.email && supabaseUser.phone ? 'phone' : null;
-
-        // Register in unified users collection with both email and phone
-        const { user: registeredUser } = await backendAPI.registerUser({
-          userId: supabaseUser.id, // Supabase UUID
-          email: email,
-          phone: phone,
-          emailVerified: !!email && verifiedWith === 'email',
-          phoneVerified: !!phone && verifiedWith === 'phone',
-          verifiedWith: verifiedWith as 'email' | 'phone' | null,
-        });
-
-        console.log('✅ User registered in unified MongoDB collection:', registeredUser);
-
-        // Update verification status in backend if we know which method was used
-        if (verifiedWith && (verifiedWith === 'email' || verifiedWith === 'phone')) {
-          await backendAPI.verifyUser(supabaseUser.id, verifiedWith);
-          console.log(`✅ Verification status updated: ${verifiedWith}`);
-        }
+        const existingUser = await userAPI.getUser(supabaseUser.id);
+        console.log('✅ User already exists in database, skipping registration');
       } catch (error) {
-        console.error('❌ Error registering user in MongoDB:', error);
-        // Continue even if MongoDB registration fails
+        // User doesn't exist, try to register them
+        console.log('🔄 User not found, attempting registration...');
+        try {
+          // Determine which method was used for verification
+          const verifiedWith = supabaseUser.email && !supabaseUser.phone ? 'email' : 
+                              !supabaseUser.email && supabaseUser.phone ? 'phone' : null;
+
+          // Register in unified users collection with both email and phone
+          const { user: registeredUser } = await backendAPI.registerUser({
+            userId: supabaseUser.id, // Supabase UUID
+            email: email,
+            phone: phone,
+            emailVerified: !!email && verifiedWith === 'email',
+            phoneVerified: !!phone && verifiedWith === 'phone',
+            verifiedWith: verifiedWith as 'email' | 'phone' | null,
+          });
+
+          console.log('✅ User registered in unified MongoDB collection:', registeredUser);
+
+          // Update verification status in backend if we know which method was used
+          if (verifiedWith && (verifiedWith === 'email' || verifiedWith === 'phone')) {
+            await backendAPI.verifyUser(supabaseUser.id, verifiedWith);
+            console.log(`✅ Verification status updated: ${verifiedWith}`);
+          }
+        } catch (regError) {
+          console.error('❌ Error registering user in MongoDB:', regError);
+          // Continue even if MongoDB registration fails
+        }
       }
 
       // Create or get user from API
@@ -370,38 +452,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // Get user's profiles (if any)
-      let profiles: ApiProfile[] = [];
-      try {
-        console.log('🔍 Fetching profiles for userId:', supabaseUser.id);
-        profiles = await profileAPI.getProfilesByUser(supabaseUser.id);
-        console.log('📋 Profiles fetched:', profiles.length, 'profiles found');
-        console.log('📋 Profile details:', JSON.stringify(profiles, null, 2));
-        // Ensure profiles is an array
-        if (!Array.isArray(profiles)) {
-          console.warn('⚠️ Profiles is not an array, converting to empty array');
-          profiles = [];
-        }
-      } catch (error) {
-        // No profiles yet, that's fine
-        console.log('❌ Error fetching profiles:', error);
-        console.log('No profiles found for user:', supabaseUser.id);
-        profiles = [];
-      }
+      // **OPTIMIZED**: Fetch profiles with caching
+      const profiles = await fetchProfilesOptimized(supabaseUser.id);
+      console.log('📋', profiles.length, 'profiles loaded');
 
       const user = convertApiUserToUser(apiUser, profiles);
-      console.log('👤 Converted user object:', user);
-      console.log('🆔 User ID after conversion:', user.id);
-      console.log('📝 Number of profiles in user object:', user.profiles?.length || 0);
 
       setState(prev => ({
         ...prev,
         user,
         isAuthenticated: true,
-        isAdmin: false, // You can add admin check logic here if needed
+        isAdmin: false,
       }));
 
-      // If user has profiles, load the first one
+      // **OPTIMIZED**: Auto-load first profile
       if (profiles.length > 0) {
         await loadProfileData(profiles[0]._id);
       }
@@ -583,18 +647,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('Actual profile object:', actualProfile);
       console.log('Profile _id:', actualProfile._id);
       
-      // Always redirect to profile selection, even if _id is missing
-      // The profile selection page will reload all profiles from the server
-      toast.success('');
+      // **OPTIMIZED**: Clear cache and force refresh
+      clearProfileCache(state.user.id);
+      const allProfiles = await fetchProfilesOptimized(state.user.id, true);
       
-      // Redirect to profile selection page to show all profiles
+      setState(prev => ({
+        ...prev,
+        user: prev.user ? {
+          ...prev.user,
+          profiles: allProfiles.map(convertApiProfileToProfile),
+        } : null,
+      }));
+      
+      toast.success('Profile created successfully!');
+      
+      // Redirect to profile selection page
       setTimeout(() => {
         window.location.hash = '#profile-selection';
-        // Reload the page to ensure fresh data
-        window.location.reload();
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error('Error creating profile:', error);
+      toast.error('Failed to create profile. Please try again.');
       throw error;
     }
   };
@@ -604,8 +677,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       await loadProfileData(profileId);
+      
+      // **OPTIMIZED**: Use cached profiles
+      const allProfiles = await fetchProfilesOptimized(state.user.id);
+      setState(prev => ({
+        ...prev,
+        user: prev.user ? {
+          ...prev.user,
+          profiles: allProfiles.map(convertApiProfileToProfile),
+        } : null,
+      }));
+      
+      toast.success('Profile switched!');
     } catch (error) {
       console.error('Error switching profile:', error);
+      toast.error('Failed to switch profile');
     }
   };
 

@@ -298,12 +298,15 @@ export const profileAPI = {
   getProfilesByUser: async (userId: string): Promise<Profile[]> => {
     if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
       if (AUTH_MODE === 'nodejs') {
-        return apiCall(`/profiles/user/${userId}`, 'GET');
+        const response: any = await apiCall(`/profiles/user/${userId}`, 'GET');
+        // Extract profiles array from response
+        return Array.isArray(response.profiles) ? response.profiles : [];
       } else {
         return mockDb.find('profiles', { userId }) as Profile[];
       }
     }
-    return apiCall(`/profiles/user/${userId}`, 'GET');
+    const response: any = await apiCall(`/profiles/user/${userId}`, 'GET');
+    return Array.isArray(response.profiles) ? response.profiles : [];
   },
 
   // Get profile by ID

@@ -115,7 +115,19 @@ router.get('/:profileId', async (req, res) => {
 
     res.status(200).json({
       success: true,
-      profile,
+      profile: {
+        _id: profile._id.toString(),
+        userId: profile.userId,
+        name: profile.name,
+        prn: profile.prn,
+        dob: profile.dob,
+        preferredLanguage: profile.preferredLanguage,
+        category: profile.category,
+        referralCode: profile.referralCode,
+        isActive: profile.isActive,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      },
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -132,9 +144,24 @@ router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params;
     const profiles = await ProfileModel.findProfilesByUserId(userId);
 
+    // Serialize profiles to ensure _id is a string
+    const serializedProfiles = profiles.map(profile => ({
+      _id: profile._id.toString(),
+      userId: profile.userId,
+      name: profile.name,
+      prn: profile.prn,
+      dob: profile.dob,
+      preferredLanguage: profile.preferredLanguage,
+      category: profile.category,
+      referralCode: profile.referralCode,
+      isActive: profile.isActive,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    }));
+
     res.status(200).json({
       success: true,
-      profiles,
+      profiles: serializedProfiles,
     });
   } catch (error) {
     console.error('Get profiles error:', error);

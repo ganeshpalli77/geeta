@@ -28,41 +28,145 @@ export function ReferralPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('=== ReferralPage Debug ===');
+    console.log('User:', user);
+    console.log('User profiles:', user?.profiles);
+    console.log('Current profile:', currentProfile);
+    console.log('========================');
+  }, [user, currentProfile]);
+
+  // Check if profile is being loaded (show loading only briefly)
+  if (!user || (!currentProfile && loading)) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-12">
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#D55328] mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700">Loading profile...</h2>
+          <p className="text-gray-500 mt-2">Please wait while we load your profile data</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has no profiles (only after data is loaded)
+  if (user && (!user.profiles || user.profiles.length === 0) && !currentProfile) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-12">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="text-6xl mb-6">📝</div>
+          <h2 className="text-2xl font-bold text-[#822A12] mb-3">Create a Profile First</h2>
+          <p className="text-gray-600 mb-6 max-w-md">
+            You need to create a participant profile before you can access referrals.
+            Click the button below to create your profile.
+          </p>
+          <Button
+            onClick={() => window.location.hash = '#profile'}
+            className="bg-gradient-to-r from-[#D55328] to-[#822A12] hover:from-[#822A12] hover:to-[#D55328] text-white px-8 py-6 text-lg"
+          >
+            Create Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // If no current profile but user has profiles, show selection message
+  if (!currentProfile && user && user.profiles && user.profiles.length > 0) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-12">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="text-6xl mb-6">👤</div>
+          <h2 className="text-2xl font-bold text-[#822A12] mb-3">Select a Profile</h2>
+          <p className="text-gray-600 mb-6 max-w-md">
+            You need to select a profile to access referrals.
+            Click the button below to select your profile.
+          </p>
+          <Button
+            onClick={() => window.location.hash = '#profile-selection'}
+            className="bg-gradient-to-r from-[#D55328] to-[#822A12] hover:from-[#822A12] hover:to-[#D55328] text-white px-8 py-6 text-lg"
+          >
+            Select Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Get referral code from profile (it's generated and stored in the backend)
   const [referralCode, setReferralCode] = useState(currentProfile?.referralCode || '');
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeError, setCodeError] = useState('');
 
-  // Generate referral code if profile doesn't have one
+  // Load referral code from profile
   useEffect(() => {
-    const generateCodeForOldProfile = async () => {
-      if (!currentProfile) return;
-      
-      if (currentProfile.referralCode) {
-        setReferralCode(currentProfile.referralCode);
-        console.log('Referral code loaded from profile:', currentProfile.referralCode);
-      } else {
-        // Generate for existing profiles that don't have one
-        console.log('Generating referral code for existing profile:', currentProfile.id);
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/profiles/${currentProfile.id}/generate-referral-code`,
-            { method: 'POST' }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            setReferralCode(data.referralCode);
-            console.log('Referral code generated:', data.referralCode);
-          } else {
-            console.error('Failed to generate referral code');
-          }
-        } catch (error) {
-          console.error('Error generating referral code:', error);
-        }
-      }
-    };
-
-    generateCodeForOldProfile();
+    if (!currentProfile) {
+      return;
+    }
+    
+    if (currentProfile.referralCode) {
+      setReferralCode(currentProfile.referralCode);
+      console.log('✅ Referral code loaded from profile:', currentProfile.referralCode);
+    } else {
+      console.log('⚠️ Profile does not have a referral code yet:', currentProfile.id);
+    }
   }, [currentProfile]);
+
+  // Manual generate referral code function
+  const handleGenerateCode = async () => {
+    if (!currentProfile) {
+      toast.error('No profile selected. Please select a profile first.');
+      console.error('❌ No currentProfile available');
+      return;
+    }
+
+    if (!currentProfile.id) {
+      toast.error('Profile ID is missing. Please refresh the page.');
+      console.error('❌ Profile ID is undefined:', currentProfile);
+      return;
+    }
+
+    console.log('🔄 Manually generating referral code for profile:', currentProfile.id);
+    console.log('Current Profile Object:', currentProfile);
+    console.log('User Object:', user);
+    
+    setCodeLoading(true);
+    setCodeError('');
+    
+    try {
+      const url = `${API_BASE_URL}/profiles/${currentProfile.id}/generate-referral-code`;
+      console.log('Making API call to:', url);
+      
+      const response = await fetch(url, { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('API Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReferralCode(data.referralCode);
+        setCodeLoading(false);
+        console.log('✅ Referral code generated:', data.referralCode);
+        toast.success('Referral code generated successfully!');
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Failed to generate referral code:', errorData);
+        setCodeError(errorData.error || 'Failed to generate referral code');
+        setCodeLoading(false);
+        toast.error('Failed to generate referral code');
+      }
+    } catch (error) {
+      console.error('❌ Error generating referral code:', error);
+      setCodeError('Cannot connect to server. Please check if backend is running.');
+      setCodeLoading(false);
+      toast.error('Cannot connect to server');
+    }
+  };
 
   // Fetch referral stats
   useEffect(() => {
@@ -158,6 +262,20 @@ export function ReferralPage() {
     }
   };
 
+  // Debug info
+  useEffect(() => {
+    console.log('=== Referral Page Debug Info ===');
+    console.log('Current Profile:', currentProfile);
+    console.log('Profile ID:', currentProfile?.id);
+    console.log('User:', user);
+    console.log('User ID:', user?.id);
+    console.log('Referral Code:', referralCode);
+    console.log('Code Loading:', codeLoading);
+    console.log('Code Error:', codeError);
+    console.log('API Base URL:', API_BASE_URL);
+    console.log('===============================');
+  }, [currentProfile, user, referralCode, codeLoading, codeError]);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 md:py-12">
       {/* Header */}
@@ -216,20 +334,23 @@ export function ReferralPage() {
 
          {/* Referral Code Display */}
          <div className="bg-gradient-to-r from-[#FFF8ED] to-[#f5ebd8] border-2 border-[#E8C56E] rounded-lg p-8">
-           {!referralCode ? (
+           {codeLoading ? (
              <div className="text-center text-gray-500">
-               <p>Loading referral code...</p>
+               <div className="flex flex-col items-center gap-3">
+                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D55328]"></div>
+                 <p className="text-lg">Generating your referral code...</p>
+                 <p className="text-sm">Please wait a moment</p>
+               </div>
              </div>
-           ) : (
+           ) : referralCode ? (
              <div className="flex flex-col items-center justify-center gap-4">
-               <div className="text-4xl md:text-5xl font-bold text-[#D55328] tracking-wider break-all">
+               <div className="text-4xl md:text-5xl font-bold text-[#D55328] tracking-wider break-all text-center">
                  {referralCode}
                </div>
                <Button
                  onClick={handleCopy}
                  className="bg-[#D55328] hover:bg-[#822A12] px-8 py-6 text-lg"
                  size="lg"
-                 disabled={!referralCode}
                >
                  {copied ? (
                    <>✓ Copied!</>
@@ -243,6 +364,41 @@ export function ReferralPage() {
                <p className="text-sm text-gray-600 text-center mt-2">
                  {t.referral.shareCode}
                </p>
+               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                 <p className="text-xs text-green-700 flex items-center gap-2 justify-center">
+                   <Gift className="w-4 h-4" />
+                   This is your permanent referral code - Share it to earn rewards!
+                 </p>
+               </div>
+             </div>
+           ) : (
+             <div className="text-center">
+               <div className="flex flex-col items-center gap-4">
+                 <div className="text-6xl">🎁</div>
+                 <h3 className="text-xl font-semibold text-[#822A12]">
+                   Generate Your Referral Code
+                 </h3>
+                 <p className="text-gray-600 max-w-md">
+                   Click the button below to generate your unique referral code. 
+                   Once generated, you can share it with friends and earn rewards!
+                 </p>
+                 {codeError && (
+                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg max-w-md">
+                     <p className="text-sm text-red-600">{codeError}</p>
+                   </div>
+                 )}
+                 <Button
+                   onClick={handleGenerateCode}
+                   className="bg-gradient-to-r from-[#D55328] to-[#822A12] hover:from-[#822A12] hover:to-[#D55328] text-white px-10 py-6 text-lg font-semibold shadow-lg"
+                   size="lg"
+                 >
+                   <Gift className="w-6 h-6 mr-3" />
+                   Generate My Referral Code
+                 </Button>
+                 <p className="text-xs text-gray-500 italic">
+                   * One-time generation - Your code will be saved permanently
+                 </p>
+               </div>
              </div>
            )}
          </div>

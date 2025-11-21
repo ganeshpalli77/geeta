@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { useTranslation } from '../../utils/translations';
 import { Button } from '../ui/button';
@@ -7,7 +7,7 @@ import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
-import { Mail, Phone, KeyRound } from 'lucide-react';
+import { Mail, Phone, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../utils/config';
 
@@ -31,6 +31,9 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
   const [password, setPassword] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [adminMode, setAdminMode] = useState<'login' | 'register'>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpSentTo, setOtpSentTo] = useState<{ email: boolean; phone: boolean }>({ email: false, phone: false });
 
@@ -196,7 +199,7 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
 
       // Check if at least one OTP was sent successfully
       if (sentTo.email || sentTo.phone) {
-        const methods = [];
+        const methods: string[] = [];
         if (sentTo.email) methods.push('email');
         if (sentTo.phone) methods.push('phone');
         toast.success(`OTP sent to your ${methods.join(' and ')}!`);
@@ -261,6 +264,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
   };
 
   const handleAdminLogin = async () => {
+    if (!username || !password) {
+      toast.error('Please enter username and password');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -273,6 +281,62 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
       }
     } catch (error) {
       toast.error('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminRegister = async () => {
+    // Validation
+    if (!username || !adminEmail || !password || !confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(adminEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/admin-register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          email: adminEmail,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Admin registered successfully! You can now login.');
+        // Switch to login mode
+        setAdminMode('login');
+        setPassword('');
+        setConfirmPassword('');
+        setAdminEmail('');
+      } else {
+        toast.error(data.error || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Admin registration error:', error);
+      toast.error('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -434,40 +498,155 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         </TabsContent>
 
         <TabsContent value="admin" className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">{t('username')}</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="admin"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('password')}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
-              />
-            </div>
-            
+          {/* Admin Mode Switcher */}
+          <div className="flex gap-2 mb-4">
             <Button
-              onClick={handleAdminLogin}
-              disabled={loading}
-              className="w-full rounded-[25px]"
-              style={{ backgroundColor: '#D55328' }}
+              variant={adminMode === 'login' ? 'default' : 'outline'}
+              onClick={() => setAdminMode('login')}
+              className="flex-1 rounded-[25px]"
+              style={{ backgroundColor: adminMode === 'login' ? '#D55328' : 'transparent' }}
             >
-              <KeyRound className="w-4 h-4 mr-2" />
-              {loading ? t('loading') : t('login')}
+              Admin Login
+            </Button>
+            <Button
+              variant={adminMode === 'register' ? 'default' : 'outline'}
+              onClick={() => setAdminMode('register')}
+              className="flex-1 rounded-[25px]"
+              style={{ backgroundColor: adminMode === 'register' ? '#D55328' : 'transparent' }}
+            >
+              Admin Register
             </Button>
           </div>
+
+          {adminMode === 'login' ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">{t('username')}</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2 relative">
+                <Label htmlFor="password">{t('password')}</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleAdminLogin}
+                disabled={loading}
+                className="w-full rounded-[25px]"
+                style={{ backgroundColor: '#D55328' }}
+              >
+                <KeyRound className="w-4 h-4 mr-2" />
+                {loading ? t('loading') : t('login')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-username">{t('username')} *</Label>
+                <Input
+                  id="admin-username"
+                  type="text"
+                  placeholder="Choose a username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">Email *</Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2 relative">
+                <Label htmlFor="admin-password">{t('password')} *</Label>
+                <div className="relative">
+                  <Input
+                    id="admin-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 relative">
+                <Label htmlFor="admin-confirm-password">Confirm Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="admin-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAdminRegister()}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleAdminRegister}
+                disabled={loading}
+                className="w-full rounded-[25px]"
+                style={{ backgroundColor: '#D55328' }}
+              >
+                <KeyRound className="w-4 h-4 mr-2" />
+                {loading ? 'Registering...' : 'Register Admin'}
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
