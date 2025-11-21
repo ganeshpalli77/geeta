@@ -19,6 +19,8 @@ import quizRouter from './routes/quiz.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import authRouter from './routes/auth.js';
 import puzzleRouter from './routes/puzzle.js';
+import sloganRouter from './routes/slogan.js';
+import reelRouter from './routes/reel.js';
 import { initializeDefaultAdmin } from './models/Admin.js';
 import { getDatabase } from './config/database.js';
 
@@ -195,6 +197,20 @@ app.use('/api/auth', authRouter);
 
 // Puzzle routes
 app.use('/api/puzzle', puzzleRouter);
+
+// Slogan routes - with caching
+app.use('/api/slogan', 
+  cacheMiddleware(3 * 60 * 1000), // Cache for 3 minutes
+  invalidateCacheMiddleware(['cache:/api/slogan/']),
+  sloganRouter
+);
+
+// Reel routes - with caching
+app.use('/api/reel', 
+  cacheMiddleware(3 * 60 * 1000), // Cache for 3 minutes
+  invalidateCacheMiddleware(['cache:/api/reel/']),
+  reelRouter
+);
 
 // ============================================================================
 // ERROR HANDLERS

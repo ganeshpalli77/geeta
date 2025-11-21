@@ -306,21 +306,23 @@ export const profileAPI = {
       }
     }
     const response: any = await apiCall(`/profiles/user/${userId}`, 'GET');
-    return Array.isArray(response.profiles) ? response.profiles : [];
+    return response.profiles || [];
   },
 
   // Get profile by ID
   getProfile: async (profileId: string): Promise<Profile> => {
     if (USE_MOCK_API || AUTH_MODE === 'nodejs') {
       if (AUTH_MODE === 'nodejs') {
-        return apiCall(`/profiles/${profileId}`, 'GET');
+        const response: any = await apiCall(`/profiles/${profileId}`, 'GET');
+        return response.profile || response;
       } else {
         const profile = mockDb.findById('profiles', profileId) as Profile | null;
         if (!profile) throw new Error('Profile not found');
         return profile;
       }
     }
-    return apiCall(`/profiles/${profileId}`, 'GET');
+    const response: any = await apiCall(`/profiles/${profileId}`, 'GET');
+    return response.profile || response;
   },
 
   // Update profile
@@ -421,7 +423,7 @@ export const eventAPI = {
         submittedAt: new Date().toISOString(),
       }) as SloganSubmission;
     }
-    return apiCall('/events/slogan', 'POST', { profileId, slogan });
+    return apiCall('/slogan', 'POST', { profileId, slogan });
   },
 
   // Get slogan submissions by profile
@@ -429,7 +431,8 @@ export const eventAPI = {
     if (USE_MOCK_API || USE_SUPABASE_AUTH) {
       return mockDb.find('sloganSubmissions', { profileId }) as SloganSubmission[];
     }
-    return apiCall(`/events/slogans/profile/${profileId}`, 'GET');
+    const response: any = await apiCall(`/slogan/profile/${profileId}`, 'GET');
+    return response.data || response || [];
   },
 
   // Get all video submissions (admin)

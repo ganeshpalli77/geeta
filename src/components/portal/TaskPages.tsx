@@ -289,8 +289,53 @@ export function PuzzleTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
 
 // Slogan Task Page
 export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { currentProfile, submitSlogan, sloganSubmissions } = useApp();
+  const { currentProfile, user } = useApp();
   const [slogan, setSlogan] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [profileSlogans, setProfileSlogans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Debug: Log profile info - MUST be before other useEffects
+  useEffect(() => {
+    console.log('Current Profile:', currentProfile);
+    console.log('Profile ID:', currentProfile?.id);
+    console.log('User:', user);
+  }, [currentProfile, user]);
+
+  // Load user's previous slogans
+  useEffect(() => {
+    if (currentProfile && user) {
+      loadSlogans();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProfile, user]);
+
+  const loadSlogans = async () => {
+    const profileId = currentProfile?.id || (currentProfile as any)?._id;
+    
+    if (!profileId) {
+      console.log('Cannot load slogans: profile ID is missing', { currentProfile, hasId: !!currentProfile?.id, has_id: !!(currentProfile as any)?._id });
+      setLoading(false);
+      return;
+    }
+    
+    console.log('Loading slogans for profile:', profileId);
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/slogan/profile/${profileId}`);
+      const data = await response.json();
+      
+      console.log('Slogans loaded:', data);
+      
+      if (data.success) {
+        setProfileSlogans(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading slogans:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!currentProfile) {
     return (
@@ -304,17 +349,67 @@ export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
     );
   }
 
-  const profileSlogans = sloganSubmissions.filter(s => s.profileId === currentProfile.id);
-
-  const handleSloganSubmit = () => {
+  const handleSloganSubmit = async () => {
     if (!slogan || slogan.trim().length < 10) {
       toast.error('Please enter a slogan (minimum 10 characters)');
       return;
     }
 
-    submitSlogan(slogan);
-    toast.success('Slogan submitted successfully! +75 credits awarded.');
-    setSlogan('');
+    if (!user) {
+      toast.error('Please log in to submit a slogan');
+      return;
+    }
+
+    // Handle both id and _id (MongoDB uses _id, but we convert to id)
+    const profileId = currentProfile.id || (currentProfile as any)._id;
+    
+    if (!profileId) {
+      console.error('Profile issue:', { currentProfile, hasId: !!currentProfile?.id, has_id: !!(currentProfile as any)?._id });
+      toast.error('Profile not loaded. Please refresh the page.');
+      return;
+    }
+
+    console.log('Submitting slogan with:', {
+      userId: user.id,
+      profileId: profileId,
+      slogan: slogan.trim(),
+      round: 1,
+    });
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        userId: user.id,
+        profileId: profileId,
+        slogan: slogan.trim(),
+        round: 1,
+      };
+
+      console.log('Payload:', payload);
+
+      const response = await fetch('http://localhost:5000/api/slogan/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log('Response:', data);
+
+      if (data.success) {
+        toast.success('Slogan submitted successfully! +75 credits awarded.');
+        setSlogan('');
+        // Reload slogans
+        await loadSlogans();
+      } else {
+        toast.error(data.message || 'Failed to submit slogan');
+      }
+    } catch (error) {
+      console.error('Error submitting slogan:', error);
+      toast.error('Failed to submit slogan');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -366,12 +461,12 @@ export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
 
           <Button
             onClick={handleSloganSubmit}
-            disabled={slogan.length < 10}
+            disabled={slogan.length < 10 || submitting}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
             size="lg"
           >
             <Send className="w-5 h-5 mr-2" />
-            Submit Slogan (+75 Credits)
+            {submitting ? 'Submitting...' : 'Submit Slogan (+75 Credits)'}
           </Button>
         </div>
 
@@ -395,9 +490,9 @@ export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
               <div key={index} className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="text-gray-900 font-medium">{submission.text}</p>
+                    <p className="text-gray-900 font-medium">{submission.slogan}</p>
                     <p className="text-sm text-gray-500 mt-1">
-                      {new Date(submission.submittedAt).toLocaleDateString()}
+                      Round {submission.round} • {new Date(submission.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -419,40 +514,98 @@ export function SloganTaskPage({ onNavigate }: { onNavigate?: (page: string) => 
 
 // Reel Task Page
 export function ReelTaskPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
-  const { currentProfile, submitVideo, videoSubmissions } = useApp();
+  const { user, currentProfile } = useApp();
   const [reelURL, setReelURL] = useState('');
   const [reelPlatform, setReelPlatform] = useState('youtube');
+  const [submitting, setSubmitting] = useState(false);
+  const [profileReels, setProfileReels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!currentProfile) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <Card className="p-8 text-center">
-          <Video className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h2 className="text-2xl text-gray-900 mb-2">No Profile Selected</h2>
-          <p className="text-gray-600">Please create or select a profile</p>
-        </Card>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (currentProfile?.id) {
+      loadPreviousSubmissions();
+    }
+  }, [currentProfile?.id]);
 
-  const profileReels = videoSubmissions.filter(v => v.profileId === currentProfile.id && v.type === 'reel');
+  const loadPreviousSubmissions = async () => {
+    if (!currentProfile?.id) return;
 
-  const handleReelSubmit = () => {
-    if (!reelURL) {
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:5000/api/reel/profile/${currentProfile.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setProfileReels(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading previous submissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReelSubmit = async () => {
+    if (!user || !currentProfile) {
+      toast.error('Please login and select a profile first');
+      return;
+    }
+
+    if (!reelURL.trim()) {
       toast.error('Please enter a reel URL');
       return;
     }
 
-    submitVideo({
-      profileId: currentProfile.id,
-      type: 'reel',
-      url: reelURL,
-      platform: reelPlatform,
-    });
+    // Basic URL validation
+    try {
+      new URL(reelURL);
+    } catch {
+      toast.error('Please enter a valid URL');
+      return;
+    }
 
-    toast.success('Reel submitted successfully! +100 credits awarded.');
-    setReelURL('');
+    setSubmitting(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/reel/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          profileId: currentProfile.id,
+          reelUrl: reelURL.trim(),
+          platform: reelPlatform,
+          description: '',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message || 'Reel submitted successfully! 🎉');
+        setReelURL('');
+        loadPreviousSubmissions();
+      } else {
+        toast.error(data.message || 'Failed to submit reel');
+      }
+    } catch (error) {
+      console.error('Error submitting reel:', error);
+      toast.error('Failed to submit reel. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (!currentProfile) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Please select a profile to submit a reel</p>
+        <Button onClick={() => onNavigate?.('home')} className="mt-4">
+          Go to Home
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -516,12 +669,12 @@ export function ReelTaskPage({ onNavigate }: { onNavigate?: (page: string) => vo
 
           <Button
             onClick={handleReelSubmit}
-            disabled={!reelURL}
+            disabled={!reelURL || submitting}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
             size="lg"
           >
             <Send className="w-5 h-5 mr-2" />
-            Submit Reel (+100 Credits)
+            {submitting ? 'Submitting...' : 'Submit Reel (+100 Credits)'}
           </Button>
         </div>
 
@@ -542,28 +695,28 @@ export function ReelTaskPage({ onNavigate }: { onNavigate?: (page: string) => vo
         <Card className="p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Your Previous Submissions</h3>
           <div className="space-y-3">
-            {profileReels.slice(-5).reverse().map((submission, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+            {profileReels.slice(-5).reverse().map((submission: any, index: number) => (
+              <div key={submission._id || index} className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <a
-                      href={submission.url}
+                      href={submission.reelUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline font-medium"
+                      className="text-blue-600 hover:underline font-medium break-all"
                     >
-                      {submission.url}
+                      {submission.reelUrl}
                     </a>
                     <p className="text-sm text-gray-500 mt-1">
-                      {submission.platform} • {new Date(submission.submittedAt).toLocaleDateString()}
+                      {submission.platform.charAt(0).toUpperCase() + submission.platform.slice(1)} • {new Date(submission.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                     submission.status === 'approved' ? 'bg-green-100 text-green-700' :
                     submission.status === 'rejected' ? 'bg-red-100 text-red-700' :
                     'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {submission.status}
+                    {submission.status.toUpperCase()}
                   </span>
                 </div>
               </div>

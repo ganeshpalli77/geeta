@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Zap } from 'lucide-react';
 import { cn } from '../ui/utils';
+import { toast } from 'sonner';
 
 interface AdventureCardProps {
   icon: string;
@@ -11,6 +12,7 @@ interface AdventureCardProps {
   credits?: number;
   progress?: { current: number; total: number };
   locked?: boolean;
+  lockedMessage?: string;
   unlockTime?: string;
   onClick?: () => void;
   className?: string;
@@ -27,19 +29,30 @@ export function AdventureCard({
   credits,
   progress,
   locked = false,
+  lockedMessage,
   unlockTime,
   onClick,
   className,
   buttonClassName,
   backgroundImage,
 }: AdventureCardProps) {
+  const handleClick = () => {
+    if (locked && lockedMessage) {
+      toast.info(lockedMessage);
+      return;
+    }
+    onClick?.();
+  };
+
   // Locked card style (epic Mahabharata design)
   if (locked) {
     return (
       <div
+        onClick={handleClick}
         className={cn(
           "relative rounded-3xl overflow-hidden bg-white shadow-lg border-2 flex flex-col h-full",
           "hover:shadow-xl transition-all duration-300",
+          lockedMessage ? "cursor-pointer" : "",
           className
         )}
         style={{ borderColor: 'rgba(163, 52, 255, 0.2)' }}
@@ -79,16 +92,18 @@ export function AdventureCard({
             <p className="text-gray-700 text-sm leading-relaxed mb-4 whitespace-pre-line">{description}</p>
           </div>
           
-          {/* Unlock Button - Sticks to bottom */}
-          <button 
-            disabled
-            className={cn(
-              "w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-purple-700 hover:to-purple-800 transition-all duration-300 disabled:opacity-90",
-              buttonClassName
-            )}
-          >
-            Unlock in {unlockTime}
-          </button>
+          {/* Unlock Button - Only show if unlockTime is provided (not for permanently locked features) */}
+          {unlockTime && !lockedMessage && (
+            <button 
+              disabled
+              className={cn(
+                "w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-purple-700 hover:to-purple-800 transition-all duration-300 disabled:opacity-90",
+                buttonClassName
+              )}
+            >
+              Unlock in {unlockTime}
+            </button>
+          )}
         </div>
       </div>
     );

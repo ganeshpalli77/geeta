@@ -23,6 +23,19 @@ export class ProfileModel {
       category: profileData.category || null,
       isActive: isFirstProfile, // First profile is automatically active
       referralCode: '', // Will be set after insertion
+      credits: {
+        total: 0,
+        available: 0,
+        earned: {
+          slogans: 0,
+          quizzes: 0,
+          puzzles: 0,
+          reels: 0,
+          shlokas: 0,
+          referrals: 0,
+        },
+        spent: 0,
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -118,5 +131,100 @@ export class ProfileModel {
       userId: userId, 
       isActive: true 
     });
+  }
+
+  /**
+   * Add credits to a profile
+   * @param {string} profileId - Profile ID
+   * @param {number} amount - Amount of credits to add
+   * @param {string} source - Source of credits (slogans, quizzes, puzzles, etc.)
+   */
+  static async addCredits(profileId, amount, source = 'slogans') {
+    const collection = await this.getCollection();
+    
+    const validSources = ['slogans', 'quizzes', 'puzzles', 'reels', 'shlokas', 'referrals'];
+    if (!validSources.includes(source)) {
+      throw new Error(`Invalid credit source. Must be one of: ${validSources.join(', ')}`);
+    }
+
+    const updateFields = {
+      $inc: {
+        'credits.total': amount,
+        'credits.available': amount,
+        [`credits.earned.${source}`]: amount,
+      },
+      $set: {
+        updatedAt: new Date(),
+      }
+    };
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(profileId) },
+      updateFields,
+      { returnDocument: 'after' }
+    );
+
+    return result;
+  }
+
+  /**
+   * Deduct credits from a profile
+   * @param {string} profileId - Profile ID
+   * @param {number} amount - Amount of credits to deduct
+   */
+  static async deductCredits(profileId, amount) {
+    const collection = await this.getCollection();
+    
+    // First check if profile has enough credits
+    const profile = await this.findProfileById(profileId);
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    const availableCredits = profile.credits?.available || 0;
+    if (availableCredits < amount) {
+      throw new Error(`Insufficient credits. Available: ${availableCredits}, Required: ${amount}`);
+    }
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(profileId) },
+      {
+        $inc: {
+          'credits.available': -amount,
+          'credits.spent': amount,
+        },
+        $set: {
+          updatedAt: new Date(),
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    return result;
+  }
+
+  /**
+   * Get profile credits summary
+   * @param {string} profileId - Profile ID
+   */
+  static async getCredits(profileId) {
+    const profile = await this.findProfileById(profileId);
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    return profile.credits || {
+      total: 0,
+      available: 0,
+      earned: {
+        slogans: 0,
+        quizzes: 0,
+        puzzles: 0,
+        reels: 0,
+        shlokas: 0,
+        referrals: 0,
+      },
+      spent: 0,
+    };
   }
 }

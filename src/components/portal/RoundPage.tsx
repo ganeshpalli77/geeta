@@ -429,6 +429,8 @@ export function Round1Page({ onNavigate }: { onNavigate?: (page: string) => void
       difficulty: 'Medium' as const,
       credits: 100,
       onClick: () => onNavigate?.('shloka-task'),
+      locked: true,
+      lockedMessage: 'Coming Soon! This feature will be available in the next round.',
     },
     {
       icon: '📝',

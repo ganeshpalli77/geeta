@@ -228,6 +228,18 @@ function convertApiUserToUser(apiUser: ApiUser, profiles: ApiProfile[], supabase
 function convertApiProfileToProfile(apiProfile: ApiProfile): UserProfile {
   // Some responses might already use "id" instead of "_id", so normalize it here
   const profileId = (apiProfile as any)._id || (apiProfile as any).id || '';
+  
+  console.log(' Converting API Profile:', { 
+    apiProfile: JSON.stringify(apiProfile), 
+    hasId: !!(apiProfile as any).id, 
+    has_id: !!(apiProfile as any)._id,
+    extractedId: profileId,
+    keys: Object.keys(apiProfile)
+  });
+
+  if (!profileId) {
+    console.error(' Profile ID is missing!', apiProfile);
+  }
 
   return {
     id: profileId,
@@ -283,9 +295,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
 
       const slogans = await eventAPI.getSlogansByProfile(profileId).catch(err => {
-        console.log('No slogans yet (expected for new profile)');
+        console.log('No slogans yet (expected for new profile)', err);
         return [];
       });
+      
+      console.log('📝 Loaded slogans:', slogans);
+      console.log('📝 Mapped slogans:', slogans.map(s => ({ 
+        ...s, 
+        id: s._id, 
+        profileId: s.profileId?.toString() || s.profileId,
+        submittedAt: s.createdAt || s.submittedAt 
+      })));
 
       const parts = await imagePuzzleAPI.getCollectedParts(profileId).catch(err => {
         console.log('No puzzle parts yet (expected for new profile)');
@@ -315,7 +335,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         language: profile.preferredLanguage,
         quizAttempts: quizAttempts.map(a => ({ ...a, id: a._id })),
         videoSubmissions: videos.map(v => ({ ...v, id: v._id })),
-        sloganSubmissions: slogans.map(s => ({ ...s, id: s._id })),
+        sloganSubmissions: slogans.map(s => ({ 
+          ...s, 
+          id: s._id, 
+          profileId: s.profileId?.toString() || s.profileId,
+          submittedAt: s.createdAt || s.submittedAt 
+        })),
         imageParts,
         user: prev.user && allProfiles.length > 0 ? {
           ...prev.user,

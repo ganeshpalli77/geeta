@@ -265,6 +265,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       credits: 100,
       progress: { current: 0, total: 1 },
       onClick: () => onNavigate?.('shloka-task'),
+      locked: true,
+      lockedMessage: 'Coming Soon! This feature will be available in the next round.',
     },
     {
       icon: '📝',

@@ -1,5 +1,6 @@
-import { ChevronRight, Zap, LucideIcon } from 'lucide-react';
+import { ChevronRight, Zap, LucideIcon, Lock } from 'lucide-react';
 import { cn } from '../ui/utils';
+import { toast } from 'sonner';
 
 interface TaskCardProps {
   icon: LucideIcon | string;
@@ -10,6 +11,8 @@ interface TaskCardProps {
   onClick?: () => void;
   className?: string;
   progress?: { current: number; total: number };
+  locked?: boolean;
+  lockedMessage?: string;
 }
 
 export function TaskCard({
@@ -21,22 +24,45 @@ export function TaskCard({
   onClick,
   className,
   progress,
+  locked = false,
+  lockedMessage,
 }: TaskCardProps) {
   const iconEmoji = typeof icon === 'string' ? icon : '📖';
 
+  const handleClick = () => {
+    if (locked) {
+      toast.info(lockedMessage || 'This feature is locked');
+      return;
+    }
+    onClick?.();
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
-        "relative rounded-3xl p-5 bg-white border-[3px] border-purple-600 shadow-md flex flex-col h-full",
-        "hover:shadow-xl hover:border-purple-700 transition-all duration-300",
-        onClick && "cursor-pointer",
+        "relative rounded-3xl p-5 bg-white border-[3px] shadow-md flex flex-col h-full transition-all duration-300",
+        locked 
+          ? "border-gray-300 opacity-60 cursor-not-allowed" 
+          : "border-purple-600 hover:shadow-xl hover:border-purple-700 cursor-pointer",
         className
       )}
     >
+      {/* Lock Icon Overlay */}
+      {locked && (
+        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center shadow-md">
+          <Lock className="w-4 h-4 text-white" />
+        </div>
+      )}
+
       {/* Icon */}
       <div className="flex items-center justify-start mb-4">
-        <div className="shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-3xl shadow-md">
+        <div className={cn(
+          "shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-md",
+          locked 
+            ? "bg-gradient-to-br from-gray-300 to-gray-400" 
+            : "bg-gradient-to-br from-orange-400 to-orange-600"
+        )}>
           {iconEmoji}
         </div>
       </div>
