@@ -1,4 +1,4 @@
-import { Home, CheckSquare, Trophy, Award, BookOpen, Settings, LogOut } from 'lucide-react';
+import { Home, Trophy, Award, BookOpen, Settings, LogOut, Lock } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { useApp } from '../../contexts/AppContext';
@@ -13,13 +13,13 @@ interface Round {
 }
 
 const rounds: Round[] = [
-  { id: 1, titleKey: 'round1', subtitleKey: 'Round 1', week: 1 },
-  { id: 2, titleKey: 'round2', subtitleKey: 'Round 2', week: 2 },
-  { id: 3, titleKey: 'round3', subtitleKey: 'Round 3', week: 3 },
-  { id: 4, titleKey: 'round4', subtitleKey: 'Round 4', week: 4 },
-  { id: 5, titleKey: 'round5', subtitleKey: 'Round 5', week: 5 },
-  { id: 6, titleKey: 'round6', subtitleKey: 'Round 6', week: 6 },
-  { id: 7, titleKey: 'round7', subtitleKey: 'Round 7', week: 7 },
+  { id: 1, titleKey: 'round1', subtitleKey: 'Round 1', week: 1, locked: false },
+  { id: 2, titleKey: 'round2', subtitleKey: 'Round 2', week: 2, locked: true },
+  { id: 3, titleKey: 'round3', subtitleKey: 'Round 3', week: 3, locked: true },
+  { id: 4, titleKey: 'round4', subtitleKey: 'Round 4', week: 4, locked: true },
+  { id: 5, titleKey: 'round5', subtitleKey: 'Round 5', week: 5, locked: true },
+  { id: 6, titleKey: 'round6', subtitleKey: 'Round 6', week: 6, locked: true },
+  { id: 7, titleKey: 'round7', subtitleKey: 'Round 7', week: 7, locked: true },
 ];
 
 interface PortalSidebarProps {
@@ -76,19 +76,6 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
           <Home className="w-4 h-4" />
           {t.nav.dashboard}
         </button>
-
-        <button
-          onClick={() => onNavigate('my-tasks')}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold",
-            currentPage === 'my-tasks'
-              ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30"
-              : "text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600"
-          )}
-        >
-          <CheckSquare className="w-4 h-4" />
-          {t.nav.myTasks}
-        </button>
       </nav>
 
       {/* Rounds Section */}
@@ -100,13 +87,14 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
           {rounds.map((round) => (
             <button
               key={round.id}
-              onClick={() => onNavigate(`round-${round.id}`)}
+              onClick={() => !round.locked && onNavigate(`round-${round.id}`)}
               className={cn(
                 "w-full group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-sm font-semibold relative overflow-hidden",
-                currentPage === `round-${round.id}`
+                currentPage === `round-${round.id}` && !round.locked
                   ? `bg-gradient-to-r ${getRoundColor(round.id)} text-white shadow-lg`
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50",
-                round.locked && "opacity-50 cursor-not-allowed"
+                  : "text-gray-600 dark:text-gray-400",
+                !round.locked && currentPage !== `round-${round.id}` && "hover:bg-gray-50 dark:hover:bg-gray-800/50",
+                round.locked && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800/30"
               )}
               disabled={round.locked}
             >
@@ -114,17 +102,21 @@ export function PortalSidebar({ currentPage, onNavigate }: PortalSidebarProps) {
                 <div className="text-xs font-bold">{round.subtitleKey}</div>
                 <div className={cn(
                   "text-xs",
-                  currentPage === `round-${round.id}` 
+                  currentPage === `round-${round.id}` && !round.locked
                     ? "text-white/90" 
                     : "text-gray-500 dark:text-gray-500"
                 )}>{t.rounds[round.titleKey as keyof typeof t.rounds]}</div>
               </div>
-              <span className={cn(
-                "text-xs font-bold px-2 py-0.5 rounded-full",
-                currentPage === `round-${round.id}`
-                  ? "bg-white/20 text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-              )}>W{round.week}</span>
+              {round.locked ? (
+                <Lock className="w-4 h-4 text-gray-400 dark:text-gray-600" />
+              ) : (
+                <span className={cn(
+                  "text-xs font-bold px-2 py-0.5 rounded-full",
+                  currentPage === `round-${round.id}`
+                    ? "bg-white/20 text-white"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                )}>W{round.week}</span>
+              )}
             </button>
           ))}
         </nav>
