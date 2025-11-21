@@ -6,7 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Mail, Phone, KeyRound } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 
@@ -18,61 +18,188 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
   const { login, loginWithPhone, loginAsAdmin, language } = useApp();
   const t = useTranslation(language);
   const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
   const [step, setStep] = useState<'input' | 'otp'>('input');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>(mode);
   
+  // Email and phone
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [emailOTP, setEmailOTP] = useState('');
+  const [phoneOTP, setPhoneOTP] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpSentTo, setOtpSentTo] = useState<{ email: boolean; phone: boolean }>({ email: false, phone: false });
 
+  // Send OTP to email and/or phone based on what user provided
   const handleSendOTP = async () => {
-    if (loginMethod === 'email' && !email) {
-      toast.error('Please enter your email');
+    // For LOGIN: At least one field required
+    // For REGISTRATION: Both fields required
+    if (authMode === 'register') {
+      if (!email || !phone) {
+        toast.error('Please provide both email and phone number for registration');
+        return;
+      }
+    } else {
+      // Login mode: at least one required
+      if (!email && !phone) {
+        toast.error('Please enter either email or phone number');
+        return;
+      }
+    }
+
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
+    // Validate phone format if provided
+    if (phone && phone.length < 10) {
+      toast.error('Please enter a valid phone number');
       return;
     }
-    if (loginMethod === 'phone' && !phone) {
-      toast.error('Please enter your phone number');
-      return;
+
+    const formattedPhone = phone ? (phone.startsWith('+') ? phone : `+91${phone}`) : '';
+
+    // For LOGIN: Check if user exists
+    if (authMode === 'login') {
+      try {
+        const checkResponse = await fetch('http://localhost:5000/api/users/check-exists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, phone: formattedPhone }),
+        });
+        
+        if (!checkResponse.ok) {
+          toast.error('No account found. Please register first.');
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking user existence:', err);
+        toast.error('Unable to verify account. Please try again.');
+        return;
+      }
+    }
+
+    // For REGISTRATION: Check if user already exists (prevent duplicate registration)
+    if (authMode === 'register') {
+      try {
+        const checkResponse = await fetch('http://localhost:5000/api/users/check-exists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, phone: formattedPhone }),
+        });
+        
+        if (checkResponse.ok) {
+          // User already exists
+          const data = await checkResponse.json();
+          const field = data.matchedField || 'email or phone';
+          toast.error(`Account already exists with this ${field}. Please login instead.`, {
+            duration: 5000,
+          });
+          // Switch to login mode
+          setAuthMode('login');
+          return;
+        }
+      } catch (err) {
+        // If 404, user doesn't exist - this is good for registration
+        console.log('✅ User does not exist, proceeding with registration');
+      }
     }
 
     setLoading(true);
+    const sentTo = { email: false, phone: false };
     
     try {
-      if (loginMethod === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
-
-        if (error) {
-          toast.error(error.message || 'Failed to send OTP');
-          setLoading(false);
-          return;
+      // For REGISTRATION: Store pending registration in MongoDB BEFORE sending OTP
+      if (authMode === 'register' && email && phone) {
+        try {
+          const response = await fetch('http://localhost:5000/api/pending-registrations/store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, phone: formattedPhone }),
+          });
+          
+          if (response.ok) {
+            console.log('✅ Pending registration stored in MongoDB');
+          } else {
+            console.error('Failed to store pending registration');
+          }
+        } catch (err) {
+          console.error('Error storing pending registration:', err);
+          // Continue anyway - not critical
         }
+      }
+      
+      // Send OTP to email (if provided)
+      if (email) {
+        try {
+          const { error: emailError } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              shouldCreateUser: authMode === 'register',
+              data: authMode === 'register' ? {
+                registration_email: email,
+                registration_phone: formattedPhone,
+              } : undefined,
+            },
+          });
 
-        toast.success('OTP sent to your email!');
+          if (emailError) {
+            console.error('Email OTP error:', emailError);
+            toast.error(`Failed to send OTP to email: ${emailError.message}`);
+          } else {
+            sentTo.email = true;
+            console.log('✅ OTP sent to email:', email);
+          }
+        } catch (emailErr) {
+          console.error('Email OTP exception:', emailErr);
+          toast.error('Failed to send OTP to email');
+        }
+      }
+
+      // Send OTP to phone (if provided)
+      if (phone) {
+        try {
+          const { error: phoneError } = await supabase.auth.signInWithOtp({
+            phone: formattedPhone,
+            options: {
+              shouldCreateUser: authMode === 'register',
+              data: authMode === 'register' ? {
+                registration_email: email,
+                registration_phone: formattedPhone,
+              } : undefined,
+            },
+          });
+
+          if (phoneError) {
+            console.error('Phone OTP error:', phoneError);
+            toast.error(`Failed to send OTP to phone: ${phoneError.message}`);
+          } else {
+            sentTo.phone = true;
+            console.log('✅ OTP sent to phone:', formattedPhone);
+          }
+        } catch (phoneErr) {
+          console.error('Phone OTP exception:', phoneErr);
+          toast.error('Failed to send OTP to phone');
+        }
+      }
+
+      setOtpSentTo(sentTo);
+
+      // Check if at least one OTP was sent successfully
+      if (sentTo.email || sentTo.phone) {
+        const methods = [];
+        if (sentTo.email) methods.push('email');
+        if (sentTo.phone) methods.push('phone');
+        toast.success(`OTP sent to your ${methods.join(' and ')}!`);
         setStep('otp');
       } else {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone,
-          options: {
-            shouldCreateUser: true,
-          },
-        });
-
-        if (error) {
-          toast.error(error.message || 'Failed to send OTP');
-          setLoading(false);
-          return;
-        }
-
-        toast.success('OTP sent to your phone!');
-        setStep('otp');
+        toast.error('Failed to send OTP to both email and phone. Please try again.');
       }
     } catch (error) {
       console.error('Error sending OTP:', error);
@@ -82,35 +209,59 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
     }
   };
 
+  // NEW: Verify OTP from EITHER email or phone
   const handleVerifyOTP = async () => {
+    // Check if at least one OTP is entered
+    if (!emailOTP && !phoneOTP) {
+      toast.error('Please enter OTP from either email or phone');
+      return;
+    }
+
     setLoading(true);
     
     try {
       let success = false;
+      let verificationType: 'email' | 'phone' | null = null;
       
-      if (loginMethod === 'email') {
-        success = await login(email, otp);
-      } else {
-        success = await loginWithPhone(phone, otp);
+      // Try email OTP first if provided and email OTP was sent
+      if (emailOTP && otpSentTo.email) {
+        console.log('Trying email OTP verification...');
+        success = await login(email, emailOTP);
+        if (success) {
+          verificationType = 'email';
+          console.log('✅ Email OTP verified successfully');
+        }
+      }
+      
+      // Try phone OTP if email failed or not provided, and phone OTP was sent
+      if (!success && phoneOTP && otpSentTo.phone) {
+        console.log('Trying phone OTP verification...');
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+        success = await loginWithPhone(formattedPhone, phoneOTP);
+        if (success) {
+          verificationType = 'phone';
+          console.log('✅ Phone OTP verified successfully');
+        }
       }
       
       if (success) {
-        toast.success('Login successful!');
+        toast.success(`Login successful! Verified with ${verificationType}`);
       } else {
         toast.error('Invalid OTP. Please try again.');
       }
     } catch (error) {
+      console.error('Verification error:', error);
       toast.error('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAdminLogin = () => {
+  const handleAdminLogin = async () => {
     setLoading(true);
     
     try {
-      const success = loginAsAdmin(username, password);
+      const success = await loginAsAdmin(username, password);
       
       if (success) {
         toast.success('Admin login successful!');
@@ -133,113 +284,150 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'user' | 'admin')}>
+      <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as 'user' | 'admin')}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="user">User {mode === 'register' ? 'Registration' : 'Login'}</TabsTrigger>
+          <TabsTrigger value="user">User {authMode === 'register' ? 'Registration' : 'Login'}</TabsTrigger>
           <TabsTrigger value="admin">Admin Login</TabsTrigger>
         </TabsList>
 
         <TabsContent value="user" className="space-y-4">
-          {/* Note about SMS requiring Twilio setup */}
-          <div className="flex gap-2 mb-4">
+          {/* Show email and/or phone fields based on mode */}
+          {step === 'input' && (
+            <div className="space-y-4">
+              {/* Mode switcher */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={authMode === 'login' ? 'default' : 'outline'}
+                  onClick={() => setAuthMode('login')}
+                  className="flex-1"
+                >
+                  Login
+                </Button>
+                <Button
+                  variant={authMode === 'register' ? 'default' : 'outline'}
+                  onClick={() => setAuthMode('register')}
+                  className="flex-1"
+                >
+                  Register
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {t('email')} {authMode === 'register' ? '*' : '(optional)'}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required={authMode === 'register'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {t('phone')} {authMode === 'register' ? '*' : '(optional)'}
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 1234567890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendOTP()}
+                  required={authMode === 'register'}
+                />
+              </div>
+
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  {authMode === 'register' 
+                    ? '📧 OTP will be sent to both email and phone. You can verify with either.'
+                    : '🔐 Enter either email or phone to login. OTP will be sent to verify.'}
+                </p>
+              </div>
+              
               <Button
-                variant={loginMethod === 'phone' ? 'default' : 'outline'}
-                onClick={() => {
-                  setLoginMethod('phone');
-                  setStep('input');
-                }}
-                className="flex-1 rounded-[25px]"
-                style={{ backgroundColor: loginMethod === 'phone' ? '#D55328' : 'transparent' }}
+                onClick={handleSendOTP}
+                disabled={loading}
+                className="w-full rounded-[25px]"
+                style={{ backgroundColor: '#D55328' }}
               >
-                <Phone className="w-4 h-4 mr-2" />
-                {t('phone')}
-              </Button>
-              <Button
-                variant={loginMethod === 'email' ? 'default' : 'outline'}
-                onClick={() => {
-                  setLoginMethod('email');
-                  setStep('input');
-                }}
-                className="flex-1 rounded-[25px]"
-                style={{ backgroundColor: loginMethod === 'email' ? '#D55328' : 'transparent' }}
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                {t('email')}
+                {loading ? t('loading') : (authMode === 'register' ? 'Send OTP to Register' : 'Send OTP to Login')}
               </Button>
             </div>
+          )}
 
-            {step === 'input' && (
-              <div className="space-y-4">
-                {loginMethod === 'email' ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('email')}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendOTP()}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t('phone')}</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+91 1234567890"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendOTP()}
-                    />
-                  </div>
-                )}
-                
-                <Button
-                  onClick={handleSendOTP}
-                  disabled={loading}
-                  className="w-full rounded-[25px]"
-                  style={{ backgroundColor: '#D55328' }}
-                >
-                  {loading ? t('loading') : t('sendOTP')}
-                </Button>
-              </div>
-            )}
-
-            {step === 'otp' && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="otp">{t('enterOTP')}</Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder=""
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={10}
-                    onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
-                  />
+          {/* NEW: Single OTP field - user enters either email or phone OTP */}
+          {step === 'otp' && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800 font-medium">
+                  ✨ Enter OTP from either email or phone to verify
+                </p>
+                <div className="flex gap-2 mt-2 text-xs">
+                  {otpSentTo.email && (
+                    <span className="flex items-center gap-1 text-green-700">
+                      <Mail className="w-3 h-3" /> Email ✅
+                    </span>
+                  )}
+                  {otpSentTo.phone && (
+                    <span className="flex items-center gap-1 text-green-700">
+                      <Phone className="w-3 h-3" /> Phone ✅
+                    </span>
+                  )}
                 </div>
-                
-                <Button
-                  onClick={handleVerifyOTP}
-                  disabled={loading}
-                  className="w-full rounded-[25px]"
-                  style={{ backgroundColor: '#D55328' }}
-                >
-                  {loading ? t('loading') : t('verifyOTP')}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setStep('input')}
-                  className="w-full rounded-[25px]"
-                >
-                  {t('back')}
-                </Button>
               </div>
-            )}
+
+              <div className="space-y-2">
+                <Label htmlFor="otp" className="flex items-center gap-2">
+                  Enter OTP (from email or phone)
+                </Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  placeholder="Enter OTP"
+                  value={emailOTP || phoneOTP}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Set to emailOTP by default, will try both in verification
+                    setEmailOTP(value);
+                    setPhoneOTP(value);
+                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && handleVerifyOTP()}
+                  className="text-center text-2xl tracking-widest font-mono"
+                />
+                <p className="text-xs text-gray-500 text-center">
+                  Email OTP is 8 digits, Phone OTP is 6 digits
+                </p>
+              </div>
+              
+              <Button
+                onClick={handleVerifyOTP}
+                disabled={loading}
+                className="w-full rounded-[25px]"
+                style={{ backgroundColor: '#D55328' }}
+              >
+                {loading ? t('loading') : t('verifyOTP')}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep('input');
+                  setEmailOTP('');
+                  setPhoneOTP('');
+                }}
+                className="w-full rounded-[25px]"
+              >
+                {t('back')}
+              </Button>
+            </div>
+          )}
           </TabsContent>
 
           <TabsContent value="admin" className="space-y-4">
