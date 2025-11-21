@@ -1,0 +1,3 @@
+MONGODB_URI=mongodb+srv://geethadatabase01:Geethadatabase@cluster0.ixnaagr.mongodb.net/geeta-olympiad?retryWrites=true&w=majority&appName=Cluster0
+PORT=5000
+NODE_ENV=development

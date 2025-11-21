@@ -1,0 +1,43 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - release  # Trigger on push to release branch
+      - main     # Trigger on push to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Execute SSH Command for Release Branch
+        if: github.ref == 'refs/heads/release'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && git status && git checkout release && git pull --rebase && git status 
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/client && git status && git checkout release && git pull --rebase && git status 
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
+
+      - name: Execute SSH Command for Main Branch
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && git status && git checkout main && git pull --rebase && git status'
+
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/client && git status && git checkout main && git pull --rebase && git status'
+
+            sudo -i bash -c 'set -x && cd /opt/learngeeta/olympiad_nodejs/server && ./setup.sh && docker compose down -v && docker compose up -d && sleep 5 && docker compose logs'
