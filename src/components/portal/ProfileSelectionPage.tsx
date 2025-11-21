@@ -50,8 +50,6 @@ export function ProfileSelectionPage() {
     try {
       setLoading(true);
       const data = await backendAPI.getProfilesByUser(user.id);
-      console.log('Loaded profiles:', data);
-      console.log('Current profile:', currentProfile);
       // Ensure data is an array
       const profilesArray = Array.isArray(data) ? data : [];
       setProfiles(profilesArray);
@@ -65,9 +63,7 @@ export function ProfileSelectionPage() {
       // This gives them a choice to see the empty state first
     } catch (error) {
       console.error('Error loading profiles:', error);
-      // Even on error, set empty array so we don't stay in loading state
       setProfiles([]);
-      // Don't show error toast if it's just a 404 (no profiles found)
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (!errorMessage.includes('404')) {
         toast.error('Failed to load profiles');

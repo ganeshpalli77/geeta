@@ -28,14 +28,6 @@ export function ReferralPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== ReferralPage Debug ===');
-    console.log('User:', user);
-    console.log('User profiles:', user?.profiles);
-    console.log('Current profile:', currentProfile);
-    console.log('========================');
-  }, [user, currentProfile]);
 
   // Check if profile is being loaded (show loading only briefly)
   if (!user || (!currentProfile && loading)) {
@@ -107,36 +99,21 @@ export function ReferralPage() {
     
     if (currentProfile.referralCode) {
       setReferralCode(currentProfile.referralCode);
-      console.log('✅ Referral code loaded from profile:', currentProfile.referralCode);
-    } else {
-      console.log('⚠️ Profile does not have a referral code yet:', currentProfile.id);
     }
   }, [currentProfile]);
 
   // Manual generate referral code function
   const handleGenerateCode = async () => {
-    if (!currentProfile) {
+    if (!currentProfile?.id) {
       toast.error('No profile selected. Please select a profile first.');
-      console.error('❌ No currentProfile available');
       return;
     }
-
-    if (!currentProfile.id) {
-      toast.error('Profile ID is missing. Please refresh the page.');
-      console.error('❌ Profile ID is undefined:', currentProfile);
-      return;
-    }
-
-    console.log('🔄 Manually generating referral code for profile:', currentProfile.id);
-    console.log('Current Profile Object:', currentProfile);
-    console.log('User Object:', user);
     
     setCodeLoading(true);
     setCodeError('');
     
     try {
       const url = `${API_BASE_URL}/profiles/${currentProfile.id}/generate-referral-code`;
-      console.log('Making API call to:', url);
       
       const response = await fetch(url, { 
         method: 'POST',
@@ -145,23 +122,18 @@ export function ReferralPage() {
         }
       });
       
-      console.log('API Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
         setReferralCode(data.referralCode);
         setCodeLoading(false);
-        console.log('✅ Referral code generated:', data.referralCode);
         toast.success('Referral code generated successfully!');
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Failed to generate referral code:', errorData);
         setCodeError(errorData.error || 'Failed to generate referral code');
         setCodeLoading(false);
         toast.error('Failed to generate referral code');
       }
     } catch (error) {
-      console.error('❌ Error generating referral code:', error);
       setCodeError('Cannot connect to server. Please check if backend is running.');
       setCodeLoading(false);
       toast.error('Cannot connect to server');
@@ -194,11 +166,8 @@ export function ReferralPage() {
   const handleCopy = async () => {
     if (!referralCode) {
       toast.error('Referral code not available');
-      console.error('Referral code is empty or undefined:', referralCode);
       return;
     }
-
-    console.log('Attempting to copy referral code:', referralCode);
 
     try {
       // Try using the Clipboard API first
@@ -222,14 +191,12 @@ export function ReferralPage() {
           toast.success('Referral code copied to clipboard!');
           setTimeout(() => setCopied(false), 2000);
         } catch (err) {
-          console.error('Fallback copy failed:', err);
           toast.error('Failed to copy referral code');
         } finally {
           document.body.removeChild(textArea);
         }
       }
     } catch (error) {
-      console.error('Failed to copy:', error);
       toast.error('Failed to copy referral code');
     }
   };
@@ -262,19 +229,6 @@ export function ReferralPage() {
     }
   };
 
-  // Debug info
-  useEffect(() => {
-    console.log('=== Referral Page Debug Info ===');
-    console.log('Current Profile:', currentProfile);
-    console.log('Profile ID:', currentProfile?.id);
-    console.log('User:', user);
-    console.log('User ID:', user?.id);
-    console.log('Referral Code:', referralCode);
-    console.log('Code Loading:', codeLoading);
-    console.log('Code Error:', codeError);
-    console.log('API Base URL:', API_BASE_URL);
-    console.log('===============================');
-  }, [currentProfile, user, referralCode, codeLoading, codeError]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 md:py-12">

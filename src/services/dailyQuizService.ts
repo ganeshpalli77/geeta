@@ -5,14 +5,31 @@ import { QuizQuestion } from '../contexts/AppContext';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// Cache for daily questions to prevent redundant API calls
+interface QuestionCache {
+  questions: QuizQuestion[];
+  date: string;
+  timestamp: number;
+}
+
+let questionCache: QuestionCache | null = null;
+const CACHE_DURATION = 60000; // 1 minute cache
+
 /**
  * Get daily quiz questions for today
  * All users will receive the same questions for the same day
  */
 export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promise<QuizQuestion[]> {
   try {
+    // Check cache first
+    const today = new Date().toISOString().split('T')[0];
+    if (questionCache && 
+        questionCache.date === today && 
+        Date.now() - questionCache.timestamp < CACHE_DURATION) {
+      return questionCache.questions;
+    }
+
     const url = `${API_BASE_URL}/quiz/daily-questions`;
-    console.log('🔄 Fetching daily quiz questions from:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -22,22 +39,28 @@ export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promi
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API Error:', response.status, errorText);
       throw new Error(`Failed to fetch daily quiz questions: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('✅ Received daily quiz data:', data);
     
     if (!data.questions || data.questions.length === 0) {
-      console.warn('⚠️ No questions returned from API');
       return [];
     }
     
+    // Update cache
+    questionCache = {
+      questions: data.questions,
+      date: today,
+      timestamp: Date.now()
+    };
+    
     return data.questions;
   } catch (error) {
-    console.error('❌ Error fetching daily quiz questions:', error);
+    // Return cached questions if available, even if expired
+    if (questionCache?.questions) {
+      return questionCache.questions;
+    }
     throw error;
   }
 }

@@ -25,7 +25,6 @@ export function PuzzleManagement() {
   const loadConfig = async () => {
     setLoading(true);
     try {
-      console.log('Loading puzzle config...');
       const response = await fetch('http://localhost:5000/api/puzzle/config');
       
       if (!response.ok) {
@@ -33,7 +32,6 @@ export function PuzzleManagement() {
       }
       
       const data = await response.json();
-      console.log('Puzzle config loaded:', data);
       
       if (data.success) {
         setConfig({
@@ -44,9 +42,6 @@ export function PuzzleManagement() {
         
         if (data.config.imageData) {
           setPreviewUrl(data.config.imageData);
-          console.log('Image data loaded, length:', data.config.imageData.length);
-        } else {
-          console.log('No image data in config');
         }
       }
     } catch (error) {
@@ -84,65 +79,41 @@ export function PuzzleManagement() {
   };
 
   const handleUploadImage = async () => {
-    console.log('🔵 Upload button clicked!');
-    console.log('🔵 Selected file:', selectedFile);
-    
     if (!selectedFile) {
-      console.log('❌ No file selected');
       toast.error('Please select an image first');
       return;
     }
 
     setUploading(true);
-    console.log('📤 Starting upload...');
     
     try {
-      console.log('📁 File details:', {
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: selectedFile.type
-      });
-      
       const formData = new FormData();
       formData.append('image', selectedFile);
-      console.log('📦 FormData created');
 
-      console.log('🌐 Sending request to:', 'http://localhost:5000/api/puzzle/upload-image');
       const response = await fetch('http://localhost:5000/api/puzzle/upload-image', {
         method: 'POST',
         body: formData,
       });
-
-      console.log('📨 Response status:', response.status);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Response not OK:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Upload response:', data);
 
       if (data.success) {
-        console.log('🎉 Upload successful!');
         toast.success('Puzzle image uploaded and saved successfully!');
         setConfig(prev => ({ ...prev, imageData: data.imageData }));
         setPreviewUrl(data.imageData);
         setSelectedFile(null);
-        // Reload config to ensure it's saved
-        console.log('🔄 Reloading config...');
         await loadConfig();
       } else {
-        console.error('❌ Upload failed:', data.error);
         toast.error(data.error || 'Failed to upload image');
       }
     } catch (error) {
-      console.error('💥 Error uploading image:', error);
       toast.error('Failed to upload puzzle image: ' + (error as Error).message);
     } finally {
       setUploading(false);
-      console.log('🏁 Upload process finished');
     }
   };
 

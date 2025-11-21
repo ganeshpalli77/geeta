@@ -113,7 +113,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
         }
       } catch (err) {
         // If 404, user doesn't exist - this is good for registration
-        console.log('✅ User does not exist, proceeding with registration');
       }
     }
 
@@ -130,14 +129,11 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
             body: JSON.stringify({ email, phone: formattedPhone }),
           });
           
-          if (response.ok) {
-            console.log('✅ Pending registration stored in MongoDB');
-          } else {
+          if (!response.ok) {
             console.error('Failed to store pending registration');
           }
         } catch (err) {
           console.error('Error storing pending registration:', err);
-          // Continue anyway - not critical
         }
       }
       
@@ -160,7 +156,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
             toast.error(`Failed to send OTP to email: ${emailError.message}`);
           } else {
             sentTo.email = true;
-            console.log('✅ OTP sent to email:', email);
           }
         } catch (emailErr) {
           console.error('Email OTP exception:', emailErr);
@@ -187,7 +182,6 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
             toast.error(`Failed to send OTP to phone: ${phoneError.message}`);
           } else {
             sentTo.phone = true;
-            console.log('✅ OTP sent to phone:', formattedPhone);
           }
         } catch (phoneErr) {
           console.error('Phone OTP exception:', phoneErr);
@@ -231,22 +225,18 @@ export function AuthPage({ mode = 'login' }: AuthPageProps) {
       
       // Try email OTP first if provided and email OTP was sent
       if (emailOTP && otpSentTo.email) {
-        console.log('Trying email OTP verification...');
         success = await login(email, emailOTP);
         if (success) {
           verificationType = 'email';
-          console.log('✅ Email OTP verified successfully');
         }
       }
       
       // Try phone OTP if email failed or not provided, and phone OTP was sent
       if (!success && phoneOTP && otpSentTo.phone) {
-        console.log('Trying phone OTP verification...');
         const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
         success = await loginWithPhone(formattedPhone, phoneOTP);
         if (success) {
           verificationType = 'phone';
-          console.log('✅ Phone OTP verified successfully');
         }
       }
       

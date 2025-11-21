@@ -319,7 +319,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         } : prev.user,
       }));
 
-      console.log('✅ Profile loaded successfully:', profile.name);
     } catch (error) {
       console.error('Error loading profile data:', error);
       throw error; // Re-throw so caller knows it failed
@@ -379,28 +378,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const data = await response.json();
           email = data.email;
           phone = data.phone;
-          console.log('✅ Retrieved pending registration from MongoDB:', { email, phone });
         }
       } catch (err) {
         // Silently fall back to Supabase data - this endpoint is optional
-        console.log('⚠️ Pending registration not found, using Supabase data');
       }
 
-      console.log('� Handling Supabase auth:', { 
-        email, 
-        phone, 
-        userId: supabaseUser.id,
-        supabaseEmail: supabaseUser.email,
-        supabasePhone: supabaseUser.phone
-      });
 
       // Check if user already exists, only register if they don't
       try {
-        const existingUser = await userAPI.getUser(supabaseUser.id);
-        console.log('✅ User already exists in database, skipping registration');
+        await userAPI.getUser(supabaseUser.id);
       } catch (error) {
-        // User doesn't exist, try to register them
-        console.log('🔄 User not found, attempting registration...');
         try {
           // Determine which method was used for verification
           const verifiedWith = supabaseUser.email && !supabaseUser.phone ? 'email' : 
@@ -416,15 +403,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             verifiedWith: verifiedWith as 'email' | 'phone' | null,
           });
 
-          console.log('✅ User registered in unified MongoDB collection:', registeredUser);
-
           // Update verification status in backend if we know which method was used
           if (verifiedWith && (verifiedWith === 'email' || verifiedWith === 'phone')) {
             await backendAPI.verifyUser(supabaseUser.id, verifiedWith);
-            console.log(`✅ Verification status updated: ${verifiedWith}`);
           }
         } catch (regError) {
-          console.error('❌ Error registering user in MongoDB:', regError);
           // Continue even if MongoDB registration fails
         }
       }
@@ -433,15 +416,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Use Supabase user ID as the primary identifier
       let apiUser: ApiUser;
       try {
-        // Try to get existing user by Supabase ID
         apiUser = await userAPI.getUser(supabaseUser.id);
-        console.log('Found existing user:', apiUser);
-        console.log('apiUser._id:', apiUser._id);
-        console.log('apiUser:', JSON.stringify(apiUser, null, 2));
       } catch (error) {
-        // User doesn't exist in our system yet
-        // Create a minimal user object from Supabase data
-        console.log('User not found in API, creating minimal user object');
         apiUser = {
           _id: supabaseUser.id,
           email: email || undefined,
@@ -454,7 +430,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // **OPTIMIZED**: Fetch profiles with caching
       const profiles = await fetchProfilesOptimized(supabaseUser.id);
-      console.log('📋', profiles.length, 'profiles loaded');
 
       const user = convertApiUserToUser(apiUser, profiles);
 
