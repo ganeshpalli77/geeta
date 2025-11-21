@@ -27,7 +27,68 @@ export function ReferralPage() {
     totalCreditsEarned: 0,
   });
   const [loading, setLoading] = useState(true);
+  
+  // IMPORTANT: All useState hooks must be at the top before any conditional returns
+  const [referralCode, setReferralCode] = useState(currentProfile?.referralCode || '');
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeError, setCodeError] = useState('');
 
+  // Load referral code from profile - MUST be before any returns
+  useEffect(() => {
+    if (!currentProfile) {
+      return;
+    }
+    
+    if (currentProfile.referralCode) {
+      setReferralCode(currentProfile.referralCode);
+    }
+  }, [currentProfile]);
+
+  // Fetch referral stats - MUST be before any returns
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Validate profile ID before making request
+      if (!currentProfile || !currentProfile.id) {
+        console.log('⏭️ Skipping referral stats fetch - no profile ID');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        console.log('📊 Fetching referral stats for profile:', currentProfile.id);
+        const response = await fetch(`${API_BASE_URL}/profiles/${currentProfile.id}/referrals`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data.stats);
+          console.log('✅ Referral stats loaded:', data.stats);
+        } else if (response.status === 404) {
+          console.log('ℹ️ No referral stats yet (expected for new profile)');
+          // Set default stats for new profile
+          setStats({
+            totalReferrals: 0,
+            activeReferrals: 0,
+            totalCreditsEarned: 0,
+          });
+        } else {
+          console.error('❌ Failed to fetch referral stats:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching referral stats:', error);
+        // Set default stats on error
+        setStats({
+          totalReferrals: 0,
+          activeReferrals: 0,
+          totalCreditsEarned: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [currentProfile?.id]); // Only re-run when profile ID changes
 
   // Check if profile is being loaded (show loading only briefly)
   if (!user || (!currentProfile && loading)) {
@@ -86,22 +147,6 @@ export function ReferralPage() {
     );
   }
 
-  // Get referral code from profile (it's generated and stored in the backend)
-  const [referralCode, setReferralCode] = useState(currentProfile?.referralCode || '');
-  const [codeLoading, setCodeLoading] = useState(false);
-  const [codeError, setCodeError] = useState('');
-
-  // Load referral code from profile
-  useEffect(() => {
-    if (!currentProfile) {
-      return;
-    }
-    
-    if (currentProfile.referralCode) {
-      setReferralCode(currentProfile.referralCode);
-    }
-  }, [currentProfile]);
-
   // Manual generate referral code function
   const handleGenerateCode = async () => {
     if (!currentProfile?.id) {
@@ -139,28 +184,6 @@ export function ReferralPage() {
       toast.error('Cannot connect to server');
     }
   };
-
-  // Fetch referral stats
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!currentProfile) return;
-      
-      try {
-        setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/profiles/${currentProfile.id}/referrals`);
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data.stats);
-        }
-      } catch (error) {
-        console.error('Error fetching referral stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [currentProfile]);
 
   // Copy to clipboard
   const handleCopy = async () => {

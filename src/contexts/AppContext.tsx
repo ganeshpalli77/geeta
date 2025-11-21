@@ -29,6 +29,7 @@ import { supabase } from '../utils/supabaseClient';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { backendAPI } from '../services/backendAPI';
+import { dataSyncService } from '../services/dataSync';
 
 // Types (keeping backward compatibility with existing components)
 export interface UserProfile {
@@ -210,9 +211,13 @@ function clearProfileCache(userId: string) {
 // ============================================================================
 
 // Convert API types to app types
-function convertApiUserToUser(apiUser: ApiUser, profiles: ApiProfile[]): User {
+function convertApiUserToUser(apiUser: ApiUser, profiles: ApiProfile[], supabaseUserId?: string): User {
+  // CRITICAL FIX: Always use Supabase user ID, not MongoDB _id
+  // MongoDB _id is different from the userId field which stores Supabase ID
+  const userId = supabaseUserId || (apiUser as any).userId || apiUser._id;
+  
   return {
-    id: apiUser._id,
+    id: userId, // This must be the Supabase ID for profiles to load correctly
     email: apiUser.email,
     phone: apiUser.phone,
     profiles: profiles.map(convertApiProfileToProfile),
@@ -356,82 +361,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleSupabaseAuth = async (supabaseUser: SupabaseUser, session: Session) => {
+    // Prevent duplicate processing for the same user
+    if (authProcessingRef.current || lastAuthUserIdRef.current === supabaseUser.id) {
+      console.log('⏭️ Skipping duplicate auth processing');
+      return;
+    }
+    
+    authProcessingRef.current = true;
+    lastAuthUserIdRef.current = supabaseUser.id;
+    
     try {
-      // NEW: Retrieve pending registration from MongoDB
-      let email = supabaseUser.email || '';
-      let phone = supabaseUser.phone || '';
+      console.log('🔐 Starting optimized auth flow for:', supabaseUser.id);
+      
+      // **OPTIMIZED**: Use data sync service for efficient Supabase-MongoDB sync
+      const syncResult = await dataSyncService.syncUser(supabaseUser.id);
+      console.log('✅ User synced:', syncResult.newUser ? 'New user created' : 'Existing user');
 
-      // Try to get from pending registrations using email OR phone
-      // Note: This endpoint may not exist yet, so we silently fall back to Supabase data
-      try {
-        const apiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/pending-registrations/retrieve`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email: supabaseUser.email, 
-            phone: supabaseUser.phone 
-          }),
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          email = data.email;
-          phone = data.phone;
-        }
-      } catch (err) {
-        // Silently fall back to Supabase data - this endpoint is optional
-      }
+      // **OPTIMIZED**: Fetch profiles with caching from data sync service
+      const profiles = await dataSyncService.getUserProfiles(supabaseUser.id);
+      console.log('📋 Profiles loaded:', profiles.length);
 
-
-      // Check if user already exists, only register if they don't
-      try {
-        await userAPI.getUser(supabaseUser.id);
-      } catch (error) {
-        try {
-          // Determine which method was used for verification
-          const verifiedWith = supabaseUser.email && !supabaseUser.phone ? 'email' : 
-                              !supabaseUser.email && supabaseUser.phone ? 'phone' : null;
-
-          // Register in unified users collection with both email and phone
-          const { user: registeredUser } = await backendAPI.registerUser({
-            userId: supabaseUser.id, // Supabase UUID
-            email: email,
-            phone: phone,
-            emailVerified: !!email && verifiedWith === 'email',
-            phoneVerified: !!phone && verifiedWith === 'phone',
-            verifiedWith: verifiedWith as 'email' | 'phone' | null,
-          });
-
-          // Update verification status in backend if we know which method was used
-          if (verifiedWith && (verifiedWith === 'email' || verifiedWith === 'phone')) {
-            await backendAPI.verifyUser(supabaseUser.id, verifiedWith);
-          }
-        } catch (regError) {
-          // Continue even if MongoDB registration fails
-        }
-      }
-
-      // Create or get user from API
-      // Use Supabase user ID as the primary identifier
-      let apiUser: ApiUser;
-      try {
-        apiUser = await userAPI.getUser(supabaseUser.id);
-      } catch (error) {
-        apiUser = {
-          _id: supabaseUser.id,
-          email: email || undefined,
-          phone: phone || undefined,
-          profiles: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-
-      // **OPTIMIZED**: Fetch profiles with caching
-      const profiles = await fetchProfilesOptimized(supabaseUser.id);
-
-      const user = convertApiUserToUser(apiUser, profiles);
+      // Convert to app format
+      const user = convertApiUserToUser(syncResult.mongoUser, profiles, supabaseUser.id);
 
       setState(prev => ({
         ...prev,
@@ -440,17 +391,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isAdmin: false,
       }));
 
-      // **OPTIMIZED**: Auto-load first profile
+      // **OPTIMIZED**: Auto-load first profile if available
       if (profiles.length > 0) {
+        console.log('🎯 Loading profile data for:', profiles[0]._id);
         await loadProfileData(profiles[0]._id);
+      } else if (syncResult.newUser) {
+        console.log('👤 New user - no profiles yet');
       }
+
+      console.log('✅ Auth flow complete');
     } catch (error) {
-      console.error('Error handling Supabase auth:', error);
+      console.error('❌ Error handling Supabase auth:', error);
       // Set authenticated state even if profile loading fails
       setState(prev => ({
         ...prev,
         isAuthenticated: true,
       }));
+    } finally {
+      // Reset auth processing flag after completion
+      authProcessingRef.current = false;
     }
   };
 

@@ -3,7 +3,7 @@
 
 import { QuizQuestion } from '../contexts/AppContext';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Cache for daily questions to prevent redundant API calls
 interface QuestionCache {
@@ -26,10 +26,12 @@ export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promi
     if (questionCache && 
         questionCache.date === today && 
         Date.now() - questionCache.timestamp < CACHE_DURATION) {
+      console.log('✅ Returning cached daily quiz questions');
       return questionCache.questions;
     }
 
     const url = `${API_BASE_URL}/quiz/daily-questions`;
+    console.log('🔄 Fetching daily quiz questions from:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -38,15 +40,23 @@ export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promi
       },
     });
     
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API Error:', errorText);
       throw new Error(`Failed to fetch daily quiz questions: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('📊 Received data:', data);
     
     if (!data.questions || data.questions.length === 0) {
+      console.warn('⚠️ No questions returned from API');
       return [];
     }
+    
+    console.log(`✅ Loaded ${data.questions.length} daily quiz questions`);
     
     // Update cache
     questionCache = {
@@ -57,8 +67,10 @@ export async function getDailyQuizQuestions(language: 'en' | 'hi' = 'en'): Promi
     
     return data.questions;
   } catch (error) {
+    console.error('❌ Error in getDailyQuizQuestions:', error);
     // Return cached questions if available, even if expired
     if (questionCache?.questions) {
+      console.log('⚠️ Returning expired cache due to error');
       return questionCache.questions;
     }
     throw error;

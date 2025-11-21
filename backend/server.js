@@ -7,6 +7,10 @@ import dotenv from 'dotenv';
 import { connectToDatabase, checkDatabaseHealth } from './config/database.js';
 import { requestLogger, errorLogger, logger } from './middleware/logger.js';
 import { cacheMiddleware, invalidateCacheMiddleware, cache } from './middleware/cache.js';
+import { 
+  performanceMonitor, 
+  deduplicationMiddleware 
+} from './middleware/optimization.js';
 import usersRouter from './routes/users.js';
 import profilesRouter from './routes/profiles.js';
 import loginsRouter from './routes/logins.js';
@@ -65,6 +69,12 @@ app.use('/api/users/register', authLimiter);
 // ============================================================================
 // PERFORMANCE MIDDLEWARE
 // ============================================================================
+
+// Performance monitoring
+app.use(performanceMonitor);
+
+// Request deduplication
+app.use(deduplicationMiddleware);
 
 // Response compression
 app.use(compression({

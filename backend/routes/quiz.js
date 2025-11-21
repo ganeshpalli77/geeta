@@ -301,6 +301,26 @@ router.get('/daily-questions', async (req, res) => {
     const todaySeed = getTodaySeed();
     console.log(`🌱 Using seed: ${todaySeed} for today's quiz`);
 
+    // First, check what fields are in the collection
+    const sampleDoc = await collection.findOne({});
+    console.log('📋 Sample document structure:', sampleDoc ? Object.keys(sampleDoc) : 'No documents found');
+    
+    // Get total count
+    const totalCount = await collection.countDocuments();
+    console.log(`📊 Total questions in database: ${totalCount}`);
+    
+    if (totalCount === 0) {
+      console.error('❌ No questions found in database!');
+      return res.json({
+        success: true,
+        questions: [],
+        count: 0,
+        date: new Date().toISOString().split('T')[0],
+        seed: todaySeed,
+        error: 'No questions available in database'
+      });
+    }
+
     // Fetch ALL questions by difficulty
     const [allEasyQuestions, allMediumQuestions, allHardQuestions] = await Promise.all([
       collection
@@ -317,7 +337,53 @@ router.get('/daily-questions', async (req, res) => {
     console.log(`📊 Available questions: Easy=${allEasyQuestions.length}, Medium=${allMediumQuestions.length}, Hard=${allHardQuestions.length}`);
 
     // Check if we have enough questions
-    const availableTotal = allEasyQuestions.length + allMediumQuestions.length + allHardQuestions.length;
+    let availableTotal = allEasyQuestions.length + allMediumQuestions.length + allHardQuestions.length;
+    
+    // If no questions found by difficulty, fetch ALL questions as fallback
+    if (availableTotal === 0 && totalCount > 0) {
+      console.warn('⚠️ No questions found with Difficulty field, fetching all questions as fallback');
+      const allQuestions = await collection.find({}).limit(distribution.totalQuestions).toArray();
+      console.log(`✅ Fetched ${allQuestions.length} questions without difficulty filter`);
+      
+      // Return all questions formatted
+      const formattedQuestions = allQuestions.map(q => {
+        const answerMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+        const correctAnswerLetter = q['Answer']?.trim().toUpperCase() || q['Correct Answer']?.trim().toUpperCase();
+        const correctAnswerIndex = answerMap[correctAnswerLetter] ?? 0;
+        
+        const options = [
+          q['Option A'] || q['A'] || '',
+          q['Option B'] || q['B'] || '',
+          q['Option C'] || q['C'] || '',
+          q['Option D'] || q['D'] || '',
+        ];
+        
+        return {
+          id: q._id.toString(),
+          question: q.Question || q.question || '',
+          questionHi: q['Question (Hindi)'] || q.Question || '',
+          options: options,
+          optionsHi: [
+            q['Option A (Hindi)'] || q['Option A'] || '',
+            q['Option B (Hindi)'] || q['Option B'] || '',
+            q['Option C (Hindi)'] || q['Option C'] || '',
+            q['Option D (Hindi)'] || q['Option D'] || '',
+          ],
+          correctAnswer: correctAnswerIndex,
+          difficulty: (q.Difficulty || 'medium').toLowerCase(),
+          category: q.Category || 'General',
+        };
+      });
+      
+      return res.json({
+        success: true,
+        questions: formattedQuestions,
+        count: formattedQuestions.length,
+        date: new Date().toISOString().split('T')[0],
+        seed: todaySeed,
+      });
+    }
+    
     if (availableTotal < distribution.totalQuestions) {
       console.warn(`⚠️ Not enough questions in database! Requested: ${distribution.totalQuestions}, Available: ${availableTotal}`);
     }

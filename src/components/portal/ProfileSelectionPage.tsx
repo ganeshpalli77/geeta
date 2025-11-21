@@ -33,25 +33,37 @@ export function ProfileSelectionPage() {
   }, [currentProfile?.id]);
 
   useEffect(() => {
+    console.log('ProfileSelectionPage - User state:', user);
+    console.log('ProfileSelectionPage - User ID:', user?.id);
+    
     if (user?.id) {
+      console.log('Loading profiles for user:', user.id);
       loadProfiles();
     } else if (user !== undefined) {
       // User object exists but no ID - shouldn't happen but handle it
+      console.log('User exists but no ID');
       setLoading(false);
     }
   }, [user?.id]);
 
   const loadProfiles = async () => {
     if (!user?.id) {
+      console.log('No user ID available for loading profiles');
       setLoading(false);
       return;
     }
     
     try {
       setLoading(true);
+      console.log('Fetching profiles for user ID:', user.id);
       const data = await backendAPI.getProfilesByUser(user.id);
+      console.log('Profiles fetched from backend:', data);
+      
       // Ensure data is an array
       const profilesArray = Array.isArray(data) ? data : [];
+      console.log('Profiles array:', profilesArray);
+      console.log('Number of profiles:', profilesArray.length);
+      
       setProfiles(profilesArray);
       
       // Set the active profile if it exists
@@ -63,6 +75,7 @@ export function ProfileSelectionPage() {
       // This gives them a choice to see the empty state first
     } catch (error) {
       console.error('Error loading profiles:', error);
+      console.error('Error details:', error instanceof Error ? error.message : String(error));
       setProfiles([]);
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (!errorMessage.includes('404')) {
@@ -201,11 +214,9 @@ export function ProfileSelectionPage() {
             Create your first profile to get started
           </p>
           
-          {user?.email && (
-            <p className="text-sm text-gray-500 mb-8">
-              Logged in as: {user.email || user.phone}
-            </p>
-          )}
+          <p className="text-sm text-gray-500 mb-8">
+            Logged in as: {user?.email && !user.email.includes('placeholder') ? user.email : user?.phone || 'user-' + user?.id?.substring(0, 8)}
+          </p>
           
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -238,11 +249,9 @@ export function ProfileSelectionPage() {
             <p className="text-base text-gray-600 font-normal">
               Choose a profile to continue
             </p>
-            {user?.email && (
-              <p className="text-sm text-gray-500 mt-1">
-                {user.email || user.phone}
-              </p>
-            )}
+            <p className="text-sm text-gray-500 mt-1">
+              {user?.email && !user.email.includes('placeholder') ? user.email : user?.phone || 'User ID: ' + user?.id?.substring(0, 12)}
+            </p>
           </div>
         </motion.div>
 

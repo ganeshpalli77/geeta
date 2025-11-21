@@ -142,7 +142,11 @@ router.get('/:profileId', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log('📋 Fetching profiles for userId:', userId);
+    
     const profiles = await ProfileModel.findProfilesByUserId(userId);
+    console.log('📋 Found profiles:', profiles.length);
+    console.log('📋 Profile details:', profiles.map(p => ({ id: p._id.toString(), name: p.name, userId: p.userId })));
 
     // Serialize profiles to ensure _id is a string
     const serializedProfiles = profiles.map(profile => ({
@@ -159,12 +163,14 @@ router.get('/user/:userId', async (req, res) => {
       updatedAt: profile.updatedAt,
     }));
 
+    console.log('📋 Returning serialized profiles:', serializedProfiles.length);
+
     res.status(200).json({
       success: true,
       profiles: serializedProfiles,
     });
   } catch (error) {
-    console.error('Get profiles error:', error);
+    console.error('❌ Get profiles error:', error);
     res.status(500).json({ 
       error: 'Failed to get profiles',
       message: error.message 
@@ -299,6 +305,15 @@ router.get('/user/:userId/count', async (req, res) => {
 router.get('/:profileId/referrals', async (req, res) => {
   try {
     const { profileId } = req.params;
+    
+    // Validate profileId
+    if (!profileId || profileId === 'undefined' || profileId === 'null') {
+      return res.status(400).json({ 
+        error: 'Invalid profile ID',
+        message: 'Profile ID is required and must be valid'
+      });
+    }
+
     const stats = await Referral.getReferralStats(profileId);
 
     res.status(200).json({

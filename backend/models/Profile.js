@@ -46,6 +46,10 @@ export class ProfileModel {
 
   static async findProfileById(profileId) {
     const collection = await this.getCollection();
+    // Validate profileId before creating ObjectId
+    if (!profileId || !ObjectId.isValid(profileId)) {
+      throw new Error('Invalid profile ID format');
+    }
     return await collection.findOne({ _id: new ObjectId(profileId) });
   }
 
