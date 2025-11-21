@@ -56,8 +56,12 @@ export function ProfileSelectionPage() {
     try {
       setLoading(true);
       console.log('Fetching profiles for user ID:', user.id);
+      
+      // Add cache-busting parameter to force fresh data
+      const timestamp = Date.now();
       const data = await backendAPI.getProfilesByUser(user.id);
       console.log('Profiles fetched from backend:', data);
+      console.log('Profile credits:', data.map(p => ({ name: p.name, credits: p.credits?.total || 0 })));
       
       // Ensure data is an array
       const profilesArray = Array.isArray(data) ? data : [];
@@ -157,8 +161,10 @@ export function ProfileSelectionPage() {
     return colorSchemes[index % colorSchemes.length];
   };
 
-  // Mock coins data - would come from backend
-  const getCoins = () => Math.floor(Math.random() * 500);
+  // Get credits from profile data
+  const getCredits = (profile: BackendProfile) => {
+    return profile.credits?.total || 0;
+  };
 
   if (showCreateForm) {
     return (
@@ -264,7 +270,7 @@ export function ProfileSelectionPage() {
               currentProfile?.id === profile._id || 
               selectedProfileId === profile._id ||
               currentProfile?.prn === profile.prn; // Also check by PRN as fallback
-            const coins = getCoins();
+            const credits = getCredits(profile);
 
             return (
               <motion.div
@@ -316,10 +322,10 @@ export function ProfileSelectionPage() {
                     </div>
                   </div>
 
-                  {/* Coins */}
+                  {/* Credits */}
                   <div className={`mb-4 flex items-center gap-2 ${colors.text}`}>
                     <Coins className="w-4 h-4" />
-                    <span className="text-sm font-medium">Coins: {coins}</span>
+                    <span className="text-sm font-medium">Credits: {credits}</span>
                   </div>
 
                   {/* Spacer to push button to bottom */}

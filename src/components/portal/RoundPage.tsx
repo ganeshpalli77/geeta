@@ -255,7 +255,7 @@ export function Round1Page({ onNavigate }: { onNavigate?: (page: string) => void
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">{score * 10}</div>
-              <div className="text-sm text-gray-600">Points</div>
+              <div className="text-sm text-gray-600">Credits</div>
             </div>
           </div>
 

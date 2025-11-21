@@ -594,6 +594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       console.log('Creating profile for user:', state.user.id);
+      console.log('Profile data:', profileData);
       
       const newProfile = await profileAPI.createProfile({
         userId: state.user.id,
@@ -602,6 +603,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dob: profileData.dob,
         preferredLanguage: profileData.preferredLanguage,
         category: profileData.category,
+        referralCode: (profileData as any).referralCode, // Include referral code
       });
 
       console.log('Profile created:', newProfile);

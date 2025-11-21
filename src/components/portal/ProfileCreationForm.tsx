@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { User, Calendar, IdCard, Globe, School, Gift } from 'lucide-react';
+import { User, Calendar, IdCard, Globe, School, Gift, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useApp } from '../../contexts/AppContext';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
+import { API_BASE_URL } from '../../utils/config';
 
 interface ProfileCreationFormProps {
   onSuccess?: () => void;
@@ -12,6 +13,9 @@ interface ProfileCreationFormProps {
 export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
   const { createProfile } = useApp();
   const [loading, setLoading] = useState(false);
+  const [validatingReferral, setValidatingReferral] = useState(false);
+  const [referralValid, setReferralValid] = useState<boolean | null>(null);
+  const [referralMessage, setReferralMessage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     prn: '',
@@ -20,6 +24,53 @@ export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
     referralCode: '',
     preferredLanguage: 'english',
   });
+
+  // Validate referral code
+  const validateReferralCode = async (code: string) => {
+    if (!code || code.length < 10) {
+      setReferralValid(null);
+      setReferralMessage('');
+      return;
+    }
+
+    setValidatingReferral(true);
+    setReferralValid(null);
+    setReferralMessage('Validating...');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/referrals/validate/${code.toUpperCase()}`);
+      const data = await response.json();
+
+      if (data.valid) {
+        setReferralValid(true);
+        setReferralMessage(`✅ Valid! You'll get 50 credits from ${data.referrerName || 'referrer'}`);
+        toast.success(`Valid referral code! You'll get 50 bonus credits!`);
+      } else {
+        setReferralValid(false);
+        setReferralMessage('❌ Invalid referral code');
+        toast.error('Invalid referral code');
+      }
+    } catch (error) {
+      console.error('Error validating referral code:', error);
+      setReferralValid(false);
+      setReferralMessage('❌ Could not validate code');
+    } finally {
+      setValidatingReferral(false);
+    }
+  };
+
+  const handleReferralCodeChange = (value: string) => {
+    const upperValue = value.toUpperCase();
+    setFormData({ ...formData, referralCode: upperValue });
+    
+    // Auto-validate when code looks complete
+    if (upperValue.length >= 14) {
+      validateReferralCode(upperValue);
+    } else {
+      setReferralValid(null);
+      setReferralMessage('');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +89,12 @@ export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
       return;
     }
 
+    // Check referral code validation if provided
+    if (formData.referralCode && referralValid === false) {
+      toast.error('Please enter a valid referral code or leave it empty');
+      return;
+    }
+
     setLoading(true);
     try {
       await createProfile({
@@ -48,7 +105,12 @@ export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
         preferredLanguage: formData.preferredLanguage,
         referralCode: formData.referralCode.trim() || undefined,
       });
-      toast.success('✅ Profile created successfully!');
+      
+      if (formData.referralCode && referralValid) {
+        toast.success('✅ Profile created! You received 50 bonus credits!');
+      } else {
+        toast.success('✅ Profile created successfully!');
+      }
       
       // Call onSuccess callback if provided
       if (onSuccess) {
@@ -159,18 +221,52 @@ export function ProfileCreationForm({ onSuccess }: ProfileCreationFormProps) {
               <Gift className="inline w-4 h-4 mr-2" />
               Referral Code (Optional)
             </label>
-            <input
-              type="text"
-              value={formData.referralCode}
-              onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-500 focus:outline-none transition-colors font-semibold uppercase"
-              placeholder="GEETA-XXXX-YYYY"
-              maxLength={15}
-              disabled={loading}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              🎁 Enter a friend's referral code to get 50 bonus credits!
-            </p>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.referralCode}
+                onChange={(e) => handleReferralCodeChange(e.target.value)}
+                className={`w-full px-4 py-3 pr-12 rounded-xl border-2 ${
+                  referralValid === true
+                    ? 'border-green-500 dark:border-green-500'
+                    : referralValid === false
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-gray-300 dark:border-gray-700'
+                } bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none transition-colors font-semibold uppercase`}
+                placeholder="GEETA-XXXX-YYYY"
+                maxLength={15}
+                disabled={loading}
+              />
+              {/* Validation Icon */}
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {validatingReferral && (
+                  <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                )}
+                {!validatingReferral && referralValid === true && (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                )}
+                {!validatingReferral && referralValid === false && (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+            </div>
+            {/* Validation Message */}
+            {referralMessage && (
+              <p className={`text-xs mt-2 font-semibold ${
+                referralValid === true
+                  ? 'text-green-600 dark:text-green-400'
+                  : referralValid === false
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}>
+                {referralMessage}
+              </p>
+            )}
+            {!referralMessage && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                🎁 Enter a friend's referral code to get 50 bonus credits!
+              </p>
+            )}
           </div>
 
           {/* Preferred Language */}

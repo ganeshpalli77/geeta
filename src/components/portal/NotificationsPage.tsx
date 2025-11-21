@@ -3,11 +3,11 @@ import { Bell, Check, Award, Star, AlertCircle, Info } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { Button } from '../ui/button';
 
-type NotificationTab = 'all' | 'unread' | 'achievements' | 'points';
+type NotificationTab = 'all' | 'unread' | 'achievements' | 'credits';
 
 interface Notification {
   id: string;
-  type: 'success' | 'achievement' | 'info' | 'warning' | 'points' | 'error';
+  type: 'success' | 'achievement' | 'info' | 'warning' | 'credits' | 'error';
   icon: string;
   title: string;
   message: string;
@@ -36,10 +36,10 @@ const notifications: Notification[] = [
   },
   {
     id: '3',
-    type: 'points',
+    type: 'credits',
     icon: '⭐',
-    title: 'Points Awarded',
-    message: 'You earned 100 bonus points for completing Round 1!',
+    title: 'Credits Awarded',
+    message: 'You earned 100 bonus credits for completing Round 1!',
     timestamp: '3 hours ago',
     read: false,
   },
@@ -80,14 +80,14 @@ export function NotificationsPage() {
     { id: 'all', label: 'All' },
     { id: 'unread', label: 'Unread' },
     { id: 'achievements', label: 'Achievements' },
-    { id: 'points', label: 'Points' },
+    { id: 'credits', label: 'Credits' },
   ];
 
   const filteredNotifications = notifications.filter(notification => {
     if (activeTab === 'all') return true;
     if (activeTab === 'unread') return !notification.read;
     if (activeTab === 'achievements') return notification.type === 'achievement';
-    if (activeTab === 'points') return notification.type === 'points';
+    if (activeTab === 'credits') return notification.type === 'credits';
     return true;
   });
 
@@ -101,7 +101,7 @@ export function NotificationsPage() {
         return 'border-l-blue-500';
       case 'warning':
         return 'border-l-orange-500';
-      case 'points':
+      case 'credits':
         return 'border-l-purple-500';
       case 'error':
         return 'border-l-red-500';
@@ -120,7 +120,7 @@ export function NotificationsPage() {
         return 'bg-blue-50 dark:bg-blue-950/20';
       case 'warning':
         return 'bg-orange-50 dark:bg-orange-950/20';
-      case 'points':
+      case 'credits':
         return 'bg-purple-50 dark:bg-purple-950/20';
       case 'error':
         return 'bg-red-50 dark:bg-red-950/20';

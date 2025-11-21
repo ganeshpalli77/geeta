@@ -33,8 +33,40 @@ router.get('/code/:profileId', async (req, res) => {
 });
 
 /**
+ * GET /api/referrals/validate/:code
+ * Validate a referral code (GET method for easier frontend use)
+ */
+router.get('/validate/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!code) {
+      return res.json({ success: false, valid: false, error: 'Referral code is required' });
+    }
+    
+    const db = await getDatabase();
+    const profile = await db.collection('profiles').findOne({ referralCode: code.toUpperCase() });
+    
+    if (!profile) {
+      return res.json({ success: true, valid: false, error: 'Invalid referral code' });
+    }
+    
+    res.json({
+      success: true,
+      valid: true,
+      referrerName: profile.name,
+      referrerProfileId: profile._id,
+      referrerPRN: profile.prn,
+    });
+  } catch (error) {
+    console.error('Error validating referral code:', error);
+    res.status(500).json({ success: false, valid: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/referrals/validate
- * Validate a referral code
+ * Validate a referral code (POST method for backward compatibility)
  */
 router.post('/validate', async (req, res) => {
   try {

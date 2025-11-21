@@ -59,7 +59,7 @@ export function NewDashboardPage() {
   const handleCollectPart = () => {
     const success = collectImagePart();
     if (success) {
-      toast.success('🎉 You collected a new puzzle piece! +10 points');
+      toast.success('🎉 You collected a new puzzle piece! +10 credits');
     } else {
       toast.error('You have already collected today\'s piece. Come back tomorrow!');
     }
