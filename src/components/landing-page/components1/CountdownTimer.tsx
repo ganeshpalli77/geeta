@@ -1,18 +1,18 @@
 const CountdownTimer = () => {
   return (
-    <div 
-      className="bg-[#FFCEB8] -mt-12 relative z-20 flex-shrink-0"
-      style={{
-        width: '1495.541px',
-        height: '250.59px',
-        transform: 'rotate(-1.69deg)'
+    <section 
+      className="w-full py-8 -mt-24 relative z-20" 
+      style={{ 
+        backgroundColor: '#FFCEB8',
+        height: '250px',
+        transform: 'rotate(-1.2deg)'
       }}
     >
-      <div className="container mx-auto px-4 py-8 h-full flex items-center"
-           style={{ transform: 'rotate(1.69deg)' }}>
-        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8">
+      <div className="container mx-auto px-4 max-w-[1440px]">
+        <div className="h-full flex items-start justify-center" style={{ marginTop: '-75px', transform: 'rotate(1.2deg)' }}>
+          <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Left side - Trophy and Grand Prizes */}
-            <div className="flex items-center gap-6 flex-shrink-0 -ml-24 mt-8">
+            <div className="flex items-center gap-6 flex-shrink-0 -ml-32 mt-8">
             <img 
               src="/trophee.png" 
               alt="Trophy" 
@@ -123,9 +123,10 @@ const CountdownTimer = () => {
               }}
             />
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -1,6 +1,5 @@
 import Header from '../landing-page/components1/Header';
 import Hero from '../landing-page/components1/Hero';
-import CategoryCards from '../landing-page/components1/CategoryCards';
 import CountdownTimer from '../landing-page/components1/CountdownTimer';
 import ParticipantCategories from '../landing-page/components1/ParticipantCategories';
 import ExploreEngage from '../landing-page/components1/ExploreEngage';
@@ -23,9 +22,6 @@ export function HomePage({ onOpenAuth }: HomePageProps) {
       
       {/* Hero Section */}
       <Hero onOpenAuth={onOpenAuth} />
-      
-      {/* Category Cards - Learn, Quiz, Win */}
-      <CategoryCards />
       
       {/* Countdown Timer with Trophy and Mobile */}
       <CountdownTimer />
